@@ -5,8 +5,13 @@ Crea (si no existen) usuarios demo, proyecto DEMO, tres datasets de ejemplo
 y ejecuta el pipeline. Pensado para probar en tu equipo.
 
 No borra ni modifica datos existentes: solo agrega lo que falta.
+
+Las claves NO están fijas en el código. Se toman de:
+  1. Variables de entorno: DEMO_PASSWORD y ADMIN_PASSWORD.
+  2. Si no existen, se piden por consola (oculta la clave al escribir).
 """
 
+import getpass
 import json
 import os
 import uuid
@@ -22,12 +27,29 @@ from backend.core import (
     rows_to_csv,
 )
 
-USERS = [
-    ("demo", "Usuario DEMO", "Demo2026!!segura", "admin"),
-    ("admin", "Administrador DEMO", "DataOps2026!segura", "admin"),
-    ("ingeniero", "Ingeniera DEMO", "DataOps2026!segura", "operator"),
-    ("consulta", "Usuario DEMO", "DataOps2026!segura", "viewer"),
-]
+
+def ask_password(env_name, prompt):
+    """Devuelve la clave desde el entorno o, si no, la pide por consola."""
+    value = os.environ.get(env_name, "")
+    if value:
+        return value
+    typed = getpass.getpass(f"{prompt} (mínimo 10 caracteres): ")
+    if len(typed) < 10:
+        raise SystemExit("La clave debe tener al menos 10 caracteres.")
+    return typed
+
+
+def build_users():
+    """Arma la lista de usuarios con claves fuera del código."""
+    demo_pw = ask_password("DEMO_PASSWORD", "Clave del usuario 'demo'")
+    admin_pw = ask_password("ADMIN_PASSWORD", "Clave de admin/ingeniero/consulta")
+    return [
+        ("demo", "Usuario DEMO", demo_pw, "admin"),
+        ("admin", "Administrador DEMO", admin_pw, "admin"),
+        ("ingeniero", "Ingeniera DEMO", admin_pw, "operator"),
+        ("consulta", "Usuario DEMO", admin_pw, "viewer"),
+    ]
+
 
 # (nombre archivo, contenido de ejemplo)
 PASTELES = (
@@ -96,10 +118,11 @@ def main():
     store = Store()
 
     print("Sembrando datos de prueba...")
-    admin_id = ensure_user(store, *USERS[0])
-    ensure_user(store, *USERS[1])
-    ensure_user(store, *USERS[2])
-    ensure_user(store, *USERS[3])
+    users = build_users()
+    admin_id = ensure_user(store, *users[0])
+    ensure_user(store, *users[1])
+    ensure_user(store, *users[2])
+    ensure_user(store, *users[3])
 
     # Proyecto DEMO (o p_default si ya existe).
     proj = store.one("SELECT id FROM projects WHERE id = 'p_default'")
@@ -203,7 +226,7 @@ def main():
             f" total={r2['total']} cargados={r2['loaded']}"
         )
 
-    print("Listo. Entra con admin / DataOps2026!segura o demo / Demo2026!!segura")
+    print("Listo. Entra con 'demo' o con 'admin' usando las claves que definiste.")
 
 
 if __name__ == "__main__":
