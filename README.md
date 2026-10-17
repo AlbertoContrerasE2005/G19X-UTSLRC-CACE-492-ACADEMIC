@@ -107,12 +107,13 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 5. Descarga el CSV de resultados y revisa el **Resumen**
    (métricas de 7 días) y **Monitoreo**.
 
-Cuenta demo precargada (si existe en tu copia): usuario `demo`,
-clave `Demo2026!!segura`.
+No viene ninguna cuenta por defecto: la primera que registres en el
+paso 1 se queda como administrador. Si quieres datos de ejemplo, usa el
+sembrador que se explica abajo.
 
 ### Datos de prueba (opcional)
 
-Si quieres arrancar con usuarios, archivos y pipelines ya listos:
+Para arrancar con usuarios, archivos y pipelines ya listos:
 
 ```powershell
 .\.venv\Scripts\python -m backend.seed
@@ -123,15 +124,20 @@ los archivos de ejemplo (ventas, pasteles y productos SQL), un pipeline,
 una regla de calidad, y ejecuta dos pipelines para que veas resultados
 de inmediato.
 
-Las claves **no están fijas en el código**. El script te las pide por
-consola (la escritura queda oculta). Si prefieres no interactivo,
-define las variables antes:
+Las claves **no están fijas en el código**: el script te las pide por
+consola (la escritura queda oculta) y son las que tú elijas. Anótalas,
+porque la primera vez no hay forma de recuperarlas. Si prefieres no
+interactivo, define las variables antes:
 
 ```powershell
 $env:DEMO_PASSWORD  = "tu_clave_demo"    # mínimo 10 caracteres
 $env:ADMIN_PASSWORD = "tu_clave_admin"   # la comparten admin/ingeniero/consulta
 .\.venv\Scripts\python -m backend.seed
 ```
+
+Luego entra en http://127.0.0.1:8080 con `demo` y la clave que
+definiste. Si ya habías creado tu propia cuenta en el paso 1, puedes
+usar esa y saltarte el sembrador.
 
 ## 5. Guía por función
 
