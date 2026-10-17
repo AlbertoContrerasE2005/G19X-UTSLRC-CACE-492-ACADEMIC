@@ -23,6 +23,7 @@ from backend.core import (
 )
 
 USERS = [
+    ("demo", "Usuario DEMO", "Demo2026!!segura", "admin"),
     ("admin", "Administrador DEMO", "DataOps2026!segura", "admin"),
     ("ingeniero", "Ingeniera DEMO", "DataOps2026!segura", "operator"),
     ("consulta", "Usuario DEMO", "DataOps2026!segura", "viewer"),
@@ -98,6 +99,7 @@ def main():
     admin_id = ensure_user(store, *USERS[0])
     ensure_user(store, *USERS[1])
     ensure_user(store, *USERS[2])
+    ensure_user(store, *USERS[3])
 
     # Proyecto DEMO (o p_default si ya existe).
     proj = store.one("SELECT id FROM projects WHERE id = 'p_default'")
@@ -201,7 +203,7 @@ def main():
             f" total={r2['total']} cargados={r2['loaded']}"
         )
 
-    print("Listo. Entra con admin / DataOps2026!segura")
+    print("Listo. Entra con admin / DataOps2026!segura o demo / Demo2026!!segura")
 
 
 if __name__ == "__main__":

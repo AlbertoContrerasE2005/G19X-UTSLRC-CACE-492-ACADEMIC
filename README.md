@@ -76,6 +76,19 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 Cuenta demo precargada (si existe en tu copia): usuario `demo`,
 clave `Demo2026!!segura`.
 
+### Datos de prueba (opcional)
+
+Si quieres arrancar con usuarios, archivos y pipelines ya listos:
+
+```powershell
+.\.venv\Scripts\python -m backend.seed
+```
+
+Crea los usuarios `admin`, `ingeniero` y `consulta` (clave
+`DataOps2026!segura` para los tres), un proyecto, los archivos de ejemplo
+(ventas, pasteles y productos SQL), un pipeline y una regla de calidad,
+y ejecuta dos pipelines para que veas resultados de inmediato.
+
 ## 5. Guía por función
 
 | Quiero… | Dónde |
