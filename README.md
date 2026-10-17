@@ -15,22 +15,56 @@ base de datos `127.0.0.1:3307`.
 
 - **Python 3.12** (64 bits) con `py` en el PATH.
 - **PHP 8** (sirve el de XAMPP: `C:\xampp\php\php.exe`).
-- **MariaDB/MySQL** accesible en `127.0.0.1:3307` con usuario `root`
-  sin contraseña y permiso de crear bases. Con XAMPP:
+- **MariaDB/MySQL** accesible en `127.0.0.1:3307` con permiso de crear
+  bases. Con XAMPP:
   1. Abre *XAMPP Control Panel* → *Start* en MySQL, o
-  2. `C:\xampp\mysql\bin\mysqld.exe --console` (puerto por defecto 3306;
-     este proyecto usa **3307**, ver variables abajo).
+  2. `C:\xampp\mysql\bin\mysqld.exe --datadir=<carpeta> --port=3307 --console`
+     (si omites `--console`, el proceso se cierra solo en Windows).
 - Puertos libres: `8010` y `8080`.
 
-Variables opcionales (si tu MySQL es distinto):
+### Base de datos: usuario por defecto o el tuyo
+
+Por omisión el proyecto conecta como `root` **sin contraseña** en
+`127.0.0.1:3307`, que es como viene XAMPP. Si prefieres un usuario
+propio (recomendado), créalo con estos comandos:
+
+```sql
+-- Entra como root (o el administrador de tu MariaDB) y ejecuta:
+CREATE USER 'dataops'@'localhost' IDENTIFIED BY 'tu_clave_aqui';
+CREATE USER 'dataops'@'127.0.0.1' IDENTIFIED BY 'tu_clave_aqui';
+GRANT ALL PRIVILEGES ON dataops.* TO 'dataops'@'localhost';
+GRANT ALL PRIVILEGES ON dataops.* TO 'dataops'@'127.0.0.1';
+FLUSH PRIVILEGES;
+```
+
+> Concede permisos solo sobre la base `dataops`. El proyecto crea esa
+> base automáticamente al arrancar; si prefieres crearla tú:
+> `CREATE DATABASE dataops CHARACTER SET utf8mb4;`
+
+Luego configura las variables **antes** de ejecutar `start.py`, en la
+misma consola de PowerShell:
 
 ```powershell
-$env:DATAOPS_DB_HOST = "127.0.0.1"
-$env:DATAOPS_DB_PORT = "3307"
-$env:DATAOPS_DB_USER = "root"
-$env:DATAOPS_DB_PASSWORD = ""
-$env:DATAOPS_DB_NAME = "dataops"
+$env:DATAOPS_DB_HOST     = "127.0.0.1"
+$env:DATAOPS_DB_PORT     = "3307"
+$env:DATAOPS_DB_USER     = "dataops"
+$env:DATAOPS_DB_PASSWORD = "tu_clave_aqui"
+$env:DATAOPS_DB_NAME     = "dataops"
 ```
+
+O bien define las variables de forma permanente para tu usuario de
+Windows (se aplican a toda consola nueva):
+
+```powershell
+[Environment]::SetEnvironmentVariable("DATAOPS_DB_USER",     "dataops", "User")
+[Environment]::SetEnvironmentVariable("DATAOPS_DB_PASSWORD", "tu_clave_aqui", "User")
+[Environment]::SetEnvironmentVariable("DATAOPS_DB_PORT",     "3307", "User")
+[Environment]::SetEnvironmentVariable("DATAOPS_DB_NAME",     "dataops", "User")
+```
+
+El archivo `.env.example` lista todas las variables disponibles
+(copialo como `.env` como guía de referencia; el proceso actual las lee
+del entorno).
 
 ## 2. Instalación (solo la primera vez)
 
@@ -122,6 +156,18 @@ php -l php/router.php
 38 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
 IA de ventas y genérica, aprobación, métricas, plataforma completa,
 estrés de 5000 filas, recuperación e idempotencia.
+
+Las pruebas usan una base aparte llamada `dataops_test`, que borran y
+vuelven a crear en cada corrida. Por eso el usuario de base de datos
+de las pruebas necesita permiso sobre `dataops_test*`:
+
+```sql
+GRANT ALL PRIVILEGES ON `dataops_test%`.* TO 'dataops'@'127.0.0.1';
+FLUSH PRIVILEGES;
+```
+
+Para correrlas con el usuario limitado, exporta las variables antes del
+comando; si prefieres `root` sin contraseña, no necesitas nada extra.
 
 ## 7. Estructura del proyecto
 
