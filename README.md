@@ -118,10 +118,20 @@ Si quieres arrancar con usuarios, archivos y pipelines ya listos:
 .\.venv\Scripts\python -m backend.seed
 ```
 
-Crea los usuarios `admin`, `ingeniero` y `consulta` (clave
-`DataOps2026!segura` para los tres), un proyecto, los archivos de ejemplo
-(ventas, pasteles y productos SQL), un pipeline y una regla de calidad,
-y ejecuta dos pipelines para que veas resultados de inmediato.
+Crea los usuarios `demo`, `admin`, `ingeniero` y `consulta`, un proyecto,
+los archivos de ejemplo (ventas, pasteles y productos SQL), un pipeline,
+una regla de calidad, y ejecuta dos pipelines para que veas resultados
+de inmediato.
+
+Las claves **no están fijas en el código**. El script te las pide por
+consola (la escritura queda oculta). Si prefieres no interactivo,
+define las variables antes:
+
+```powershell
+$env:DEMO_PASSWORD  = "tu_clave_demo"    # mínimo 10 caracteres
+$env:ADMIN_PASSWORD = "tu_clave_admin"   # la comparten admin/ingeniero/consulta
+.\.venv\Scripts\python -m backend.seed
+```
 
 ## 5. Guía por función
 
@@ -172,19 +182,27 @@ comando; si prefieres `root` sin contraseña, no necesitas nada extra.
 ## 7. Estructura del proyecto
 
 ```text
-backend/app.py          API FastAPI (auth, datasets, runs, métricas)
-backend/core.py         Parseo, validación, IA IsolationForest, worker
-backend/platform_api.py Proyectos, calidad, anomalías, IA chat, reportes…
-backend/db.py           Conexión MySQL + creación de esquema
-backend/profiling.py    Perfilado y score de calidad (puro Python)
-backend/ai_service.py   IA local (estadística + ML; OpenAI/Azure opcional)
-backend/reports.py      Reportes JSON/CSV/PDF
-db/schema.sql           19 tablas MySQL
-php/router.php          Entrada web :8080 (estáticos + proxy /api)
-web/                    app.js + styles.css + index.html (SPA, tema oscuro)
-examples/               CSV de ejemplo y referencia de IA
-tests/                  4 archivos, 38 pruebas
-docs/PRD.md             Requisitos del sistema
+backend/app.py             API FastAPI (auth, datasets, runs, métricas)
+backend/core.py            Parseo, validación, IA IsolationForest, worker
+backend/db.py              Conexión MySQL + creación de esquema
+backend/platform_api.py    Orquestador de la plataforma (registra módulos)
+backend/platform_common.py Ayudantes compartidos de la plataforma
+backend/platform_projects.py   Proyectos + perfil/calidad/filas de datasets
+backend/platform_quality.py    Reglas, evaluación, resultados y anomalías
+backend/platform_monitoring.py Alertas, actividad, dashboard y monitoreo
+backend/platform_reports.py    Reportes JSON/CSV/PDF
+backend/platform_ai.py         IA conversacional, resumen y recomendaciones
+backend/platform_users.py      Configuración y usuarios
+backend/profiling.py       Perfilado y score de calidad (puro Python)
+backend/ai_service.py      IA local (estadística + ML; OpenAI/Azure opcional)
+backend/reports.py         Reportes JSON/CSV/PDF
+backend/seed.py            Datos de prueba (python -m backend.seed)
+db/schema.sql              19 tablas MySQL
+php/router.php             Entrada web :8080 (estáticos + proxy /api)
+web/                       app.js + styles.css + index.html (SPA, tema oscuro)
+examples/                  CSV de ejemplo y referencia de IA
+tests/                     4 archivos, 38 pruebas
+docs/PRD.md                Requisitos del sistema
 ```
 
 ## 8. Problemas comunes
