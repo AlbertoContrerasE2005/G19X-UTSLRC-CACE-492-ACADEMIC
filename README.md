@@ -9,6 +9,17 @@ PHP 8, Python 3.12 (FastAPI), MySQL/MariaDB 10.4 + SQL.
 Todo corre en tu equipo: web `127.0.0.1:8080`, API `127.0.0.1:8010`,
 base de datos `127.0.0.1:3307`.
 
+### Declaración
+
+Este proyecto fue desarrollado con asistencia de inteligencia
+artificial (Claude, de Anthropic). La IA participó en la
+redacción del código, las pruebas y la
+documentación; las decisiones de diseño, la
+revisión del código y la validación
+de resultados corresponden a las personas responsables del
+proyecto. Toda la funcionalidad se verifica con la suite de
+pruebas incluida (`tests/`, 38 pruebas).
+
 ---
 
 ## 1. Requisitos
