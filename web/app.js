@@ -412,7 +412,16 @@ function paintChat(){ const log=$("#chat-log"); if(!log) return;
 }
 /* ---------- eventos ---------- */
 document.addEventListener("click", async (ev)=>{
-  const b=ev.target.closest("button,a"); if(!b) return;
+  // Los clics pueden caer en botones/enlaces o en tarjetas (div) con data-*.
+  const target = ev.target.closest(
+    "button,a,[data-open-project],[data-ptab],[data-run],[data-preview]," +
+    "[data-execute],[data-repeat],[data-pipe-history],[data-approve]," +
+    "[data-reject],[data-approve-all],[data-reject-all],[data-row-offset]," +
+    "[data-history-offset],[data-anom-offset],[data-act-offset],[data-ask]," +
+    "[data-view-report],[data-page],[data-confirm],[data-close]"
+  );
+  if(!target) return;
+  const b = target;
   try{
     if(b.dataset.close){ $("#"+b.dataset.close).close(); return; }
     if(b.dataset.page){ S.page=b.dataset.page; S.runOffset=0; S.runFilter=""; $("#sidebar")?.classList.add("collapsed"); await refresh(S.page!=="dashboard"); renderView(); return; }
