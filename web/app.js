@@ -166,13 +166,14 @@ function vProjectDetail(){
   const p = S.project; if(!p) return pageHead("Proyecto","No encontrado");
   const sum = S.projectSummary;
   const tabs = [["resumen","Resumen"],["datasets","Datasets"],["pipelines","Pipelines"],["calidad","Calidad"],["anomalias","Anomalías"],["ia","IA"],["reportes","Reportes"],["historial","Historial"],["config","Configuración"]];
+  // Un solo contenedor de contenido, debajo de las pestañas.
   let body = `<div class="tabs">${tabs.map(([k,t])=>`<button data-ptab="${k}" class="${S.projectTab===k?"active":""}">${t}</button>`).join("")}</div><div id="ptab-body">${skel()}</div>`;
   return pageHead(`${e(p.name)}`,`${e(p.description||"")} · ${e(p.status)} · creado ${dateFmt(p.created_at)}`,
     `<button data-page="proyectos">${icon("arrow")}Volver</button>${canEdit()?`<button data-action="edit-project" data-id="${p.id}">Editar</button>`:""}${isAdmin()?`<button class="subtle" data-action="del-project" data-id="${p.id}">Eliminar</button>`:""}`)
-  + `<section class="card"><div id="ptab-body-live"></div></section>` + `<div id="ptab-anchor">${body}</div>`;
+  + `<section class="card">${body}</section>`;
 }
 async function paintProjectTab(){
-  const host = $("#ptab-body-live") || $("#ptab-body"); if(!host||!S.project) return;
+  const host = $("#ptab-body"); if(!host||!S.project) return;
   const pid = S.project.id;
   if(S.projectTab==="resumen"){
     const s = S.projectSummary;
