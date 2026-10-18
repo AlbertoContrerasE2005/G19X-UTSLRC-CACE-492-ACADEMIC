@@ -45,10 +45,14 @@ def init_schema():
     sql = (base / "db" / "schema.sql").read_text(encoding="utf-8")
 
     # 1. Crear la base si no existe (sin elegir base).
+    # El nombre viene de DATAOPS_DB_NAME para no quedar fijo en el código.
+    db_name = settings()["database"]
     conn = connect(db="")
     try:
         with conn.cursor() as cur:
-            cur.execute("CREATE DATABASE IF NOT EXISTS dataops CHARACTER SET utf8mb4")
+            cur.execute(
+                f"CREATE DATABASE IF NOT EXISTS `{db_name}`" " CHARACTER SET utf8mb4"
+            )
     finally:
         conn.close()
 
