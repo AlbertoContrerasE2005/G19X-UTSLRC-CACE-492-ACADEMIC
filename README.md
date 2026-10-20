@@ -73,9 +73,18 @@ Windows (se aplican a toda consola nueva):
 [Environment]::SetEnvironmentVariable("DATAOPS_DB_NAME",     "dataops", "User")
 ```
 
-El archivo `.env.example` lista todas las variables disponibles
-(copialo como `.env` como guía de referencia; el proceso actual las lee
-del entorno).
+El archivo `.env.example` lista todas las variables disponibles.
+El proyecto **carga automáticamente un archivo `.env`** si existe en la raíz:
+copia `.env.example` como `.env` y edítalo, y funciona sin pasos extra.
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Las variables ya fijadas en el entorno tienen prioridad sobre el `.env`,
+así que puedes sobreescribir algo solo para una corrida sin tocar el archivo.
+
+Si prefieres no usar `.env`, define las variables directamente (arriba).
 
 ## 2. Instalación (solo la primera vez)
 
