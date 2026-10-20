@@ -95,7 +95,7 @@ Necesitas internet solo para este paso.
 
 Esto hace, en orden:
 
-1. Crea la base `dataops` y las 19 tablas (`db/schema.sql`).
+1. Crea la base `dataops` y las 20 tablas (`db/schema.sql`).
 2. Levanta la API Python en http://127.0.0.1:8010 .
 3. Levanta la web PHP en http://127.0.0.1:8080 y abre tu navegador.
 
@@ -214,7 +214,7 @@ backend/profiling.py       Perfilado y score de calidad (puro Python)
 backend/ai_service.py      IA local (estadística + ML; OpenAI/Azure opcional)
 backend/reports.py         Reportes JSON/CSV/PDF
 backend/seed.py            Datos de prueba (python -m backend.seed)
-db/schema.sql              19 tablas MySQL
+db/schema.sql              20 tablas MySQL
 php/router.php             Entrada web :8080 (estáticos + proxy /api)
 web/                       app.js + styles.css + index.html (SPA, tema oscuro)
 examples/                  CSV de ejemplo y referencia de IA
