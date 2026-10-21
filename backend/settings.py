@@ -19,6 +19,9 @@ MAX_ROWS = 20000  # Filas maximas por archivo.
 MODEL_SALES = "ventas-v1"
 MODEL_GENERIC = "generico-v1"
 
+# Nombre de la cookie de sesion.
+COOKIE = "dataops_session"
+
 
 def now():
     """Fecha actual ISO UTC."""
