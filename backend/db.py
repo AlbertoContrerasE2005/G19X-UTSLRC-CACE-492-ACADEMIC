@@ -1,8 +1,12 @@
 """Conexión MySQL simple con PyMySQL.
 
-Lee credenciales de variables de entorno (con valores locales):
+Lee credenciales de variables de entorno (o de un .env en la raíz):
   DATAOPS_DB_HOST, DATAOPS_DB_PORT, DATAOPS_DB_USER,
   DATAOPS_DB_PASSWORD, DATAOPS_DB_NAME
+
+Por omisión usa 127.0.0.1:3306, el puerto estandar de MySQL/MariaDB.
+Si tu servidor esta en otro puerto (por ejemplo 3307), cambia
+DATAOPS_DB_PORT en el archivo .env.
 """
 
 import os
@@ -15,7 +19,7 @@ def settings():
     """Devuelve dict de conexión (local por defecto)."""
     return {
         "host": os.environ.get("DATAOPS_DB_HOST", "127.0.0.1"),
-        "port": int(os.environ.get("DATAOPS_DB_PORT", "3307")),
+        "port": int(os.environ.get("DATAOPS_DB_PORT", "3306")),
         "user": os.environ.get("DATAOPS_DB_USER", "root"),
         "password": os.environ.get("DATAOPS_DB_PASSWORD", ""),
         "database": os.environ.get("DATAOPS_DB_NAME", "dataops"),

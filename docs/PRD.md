@@ -2,7 +2,7 @@
 
 Versión 1.0 · 5 de octubre de 2026.
 Stack: HTML + CSS + PHP + Python (FastAPI) + MySQL/MariaDB + SQL.
-Todo local: API `127.0.0.1:8010`, web `127.0.0.1:8080`, MySQL `127.0.0.1:3307`.
+Todo local: API `127.0.0.1:8010`, web `127.0.0.1:8080`, MySQL `127.0.0.1:3306` (configurable).
 
 ## 1. Objetivo
 

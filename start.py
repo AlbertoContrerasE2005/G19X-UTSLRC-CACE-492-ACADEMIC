@@ -53,14 +53,19 @@ def main():
         return 1
 
     # 1. Esquema MySQL (crea base y tablas si faltan).
-    print("Preparando MySQL 127.0.0.1:3307 ...")
-    from backend.db import init_schema
+    from backend.db import init_schema, settings
 
+    cfg = settings()
+    print(f"Preparando {cfg['user']}@{cfg['host']}:{cfg['port']} ...")
     try:
         init_schema()
     except Exception as exc:
         print(f"MySQL no responde: {exc}")
-        print("Arranca MariaDB con tu mysql-data en el puerto 3307.")
+        print(
+            "Revisa que el servidor este encendido y que .env tenga el"
+            " puerto y las credenciales correctos."
+        )
+        print("Ayuda: docs/BASE-DE-DATOS.md")
         return 1
 
     php = (

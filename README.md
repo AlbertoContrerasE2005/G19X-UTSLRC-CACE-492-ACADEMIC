@@ -7,7 +7,7 @@ aprobar con criterio humano, programar pipelines y monitorear todo.
 **Stack (sin frameworks ni nube):** HTML + CSS + JavaScript vanilla,
 PHP 8, Python 3.12 (FastAPI), MySQL/MariaDB 10.4 + SQL.
 Todo corre en tu equipo: web `127.0.0.1:8080`, API `127.0.0.1:8010`,
-base de datos `127.0.0.1:3307`.
+base de datos `127.0.0.1:3306` (configurable).
 
 ### Declaración
 
@@ -26,21 +26,20 @@ pruebas incluida (`tests/`, 38 pruebas).
 
 - **Python 3.12** (64 bits) con `py` en el PATH.
 - **PHP 8** (sirve el de XAMPP: `C:\xampp\php\php.exe`).
-- **MariaDB/MySQL** accesible en `127.0.0.1:3307` con permiso de crear
-  bases. Con XAMPP:
-  1. Abre *XAMPP Control Panel* → *Start* en MySQL, o
-  2. `C:\xampp\mysql\bin\mysqld.exe --datadir=<carpeta> --port=3307 --console`
-     (si omites `--console`, el proceso se cierra solo en Windows).
+- **MySQL 8 o MariaDB 10.4+** en `127.0.0.1:3306` (el puerto estándar).
+  Sirve cualquiera: XAMPP, una instalación propia, o Docker. Si el tuyo
+  usa otro puerto, se cambia en `.env`.
+  → **Guía completa: [`docs/BASE-DE-DATOS.md`](docs/BASE-DE-DATOS.md)**
 - Puertos libres: `8010` y `8080`.
 
 ### Base de datos: usuario por defecto o el tuyo
 
 Por omisión el proyecto conecta como `root` **sin contraseña** en
-`127.0.0.1:3307`, que es como viene XAMPP. Si prefieres un usuario
-propio (recomendado), créalo con estos comandos:
+`127.0.0.1:3306`, que es lo habitual en una instalación local. Si prefieres
+un usuario propio (recomendado), créalo con estos comandos:
 
 ```sql
--- Entra como root (o el administrador de tu MariaDB) y ejecuta:
+-- Entra como root (o el administrador de tu MySQL) y ejecuta:
 CREATE USER 'dataops'@'localhost' IDENTIFIED BY 'tu_clave_aqui';
 CREATE USER 'dataops'@'127.0.0.1' IDENTIFIED BY 'tu_clave_aqui';
 GRANT ALL PRIVILEGES ON dataops.* TO 'dataops'@'localhost';
@@ -57,7 +56,7 @@ misma consola de PowerShell:
 
 ```powershell
 $env:DATAOPS_DB_HOST     = "127.0.0.1"
-$env:DATAOPS_DB_PORT     = "3307"
+$env:DATAOPS_DB_PORT     = "3306"
 $env:DATAOPS_DB_USER     = "dataops"
 $env:DATAOPS_DB_PASSWORD = "tu_clave_aqui"
 $env:DATAOPS_DB_NAME     = "dataops"
@@ -69,7 +68,7 @@ Windows (se aplican a toda consola nueva):
 ```powershell
 [Environment]::SetEnvironmentVariable("DATAOPS_DB_USER",     "dataops", "User")
 [Environment]::SetEnvironmentVariable("DATAOPS_DB_PASSWORD", "tu_clave_aqui", "User")
-[Environment]::SetEnvironmentVariable("DATAOPS_DB_PORT",     "3307", "User")
+[Environment]::SetEnvironmentVariable("DATAOPS_DB_PORT",     "3306", "User")
 [Environment]::SetEnvironmentVariable("DATAOPS_DB_NAME",     "dataops", "User")
 ```
 
@@ -110,8 +109,9 @@ Esto hace, en orden:
 
 Deja esa consola abierta. Para detener: `Ctrl+C`.
 
-> Si el puerto MySQL no es 3307, define `DATAOPS_DB_*` antes de
-> ejecutar `start.py` en la misma consola.
+> Si tu MySQL no esta en el puerto 3306, define `DATAOPS_DB_*` antes
+> de ejecutar `start.py` en la misma consola, o copia `.env.example`
+> como `.env` y ajusta el puerto ahi. Ver `docs/BASE-DE-DATOS.md`.
 
 ## 4. Primer uso (5 minutos)
 
@@ -236,7 +236,7 @@ docs/PRD.md                Requisitos del sistema
 | Síntoma | Causa y solución |
 |---|---|
 | `Puerto 8010/8080 ocupado` | Cierra la otra consola de `start.py`. |
-| `MySQL no responde` | Arranca MariaDB en el puerto 3307 o define `DATAOPS_DB_*`. |
+| `MySQL no responde` | Enciende tu MySQL/MariaDB o ajusta puerto y credenciales en `.env`. Ver `docs/BASE-DE-DATOS.md`. |
 | `409 Ya hay una ejecución` | Solo corre 1 a la vez; espera a que termine. |
 | `413 Archivo hasta 10 MiB` | Parte el archivo en trozos menores. |
 | `502 API apagada` | La consola de `start.py` se cerró; vuelve a ejecutarlo. |

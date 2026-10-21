@@ -4,7 +4,7 @@ Prepara la base de datos de pruebas (dataops_test) sin tocar tus datos
 y ofrece una clase base con los metodos Auxiliares que usan todos los
 archivos de prueba.
 
-Requiere MariaDB en 127.0.0.1:3307 con root sin clave.
+Requiere un MySQL/MariaDB local (por omision 127.0.0.1:3306).
 """
 
 import os
