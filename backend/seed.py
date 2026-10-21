@@ -23,6 +23,7 @@ from backend.core import (
     Worker,
     now,
     parse_csv_dynamic,
+    parse_sql_dynamic,
     password_hash,
     rows_to_csv,
 )
@@ -89,7 +90,10 @@ def ensure_dataset(store, filename, content, project_id, user_id, file_type="csv
     if row:
         print(f"  archivo ya existe: {filename}")
         return row["id"]
-    columns, rows = parse_csv_dynamic(content)
+    if file_type == "sql":
+        columns, rows = parse_sql_dynamic(content)
+    else:
+        columns, rows = parse_csv_dynamic(content)
     did = uuid.uuid4().hex
     store.run(
         "INSERT INTO datasets"

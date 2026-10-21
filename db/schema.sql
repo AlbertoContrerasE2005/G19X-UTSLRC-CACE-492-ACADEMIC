@@ -99,7 +99,11 @@ CREATE TABLE IF NOT EXISTS runs (
     FOREIGN KEY (dataset_id) REFERENCES datasets (id),
     FOREIGN KEY (pipeline_id) REFERENCES pipelines (id),
     FOREIGN KEY (created_by) REFERENCES users (id),
-    UNIQUE KEY uq_one_active (status, id)
+    -- Solo una ejecucion activa (queued/running) a la vez, garantizado por
+    -- la base de datos: los NULL no chocan en un indice unico.
+    active_flag TINYINT GENERATED ALWAYS AS
+        (IF(status IN ('queued', 'running'), 1, NULL)) VIRTUAL,
+    UNIQUE KEY uq_one_active (active_flag)
 );
 
 CREATE TABLE IF NOT EXISTS run_logs (

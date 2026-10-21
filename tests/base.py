@@ -11,7 +11,10 @@ import os
 import unittest
 from pathlib import Path
 
-os.environ.setdefault("DATAOPS_DB_NAME", "dataops_test")
+# Fuerza la base de pruebas ANTES de importar backend: el paquete backend
+# carga el .env, y si el .env define DATAOPS_DB_NAME (por ejemplo "dataops")
+# las pruebas se ejecutarian contra la base real y la vaciarian.
+os.environ["DATAOPS_DB_NAME"] = "dataops_test"
 
 from fastapi.testclient import TestClient
 

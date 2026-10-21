@@ -11,8 +11,10 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from backend import db as mydb
-from base import ADMIN, H, BaseTestCase
+# base primero: fija DATAOPS_DB_NAME=dataops_test antes de importar backend.
+from base import ADMIN, H, BaseTestCase  # noqa: E402
+
+from backend import db as mydb  # noqa: E402
 
 
 class Extended(BaseTestCase):
@@ -94,8 +96,51 @@ class Extended(BaseTestCase):
         self.assertEqual(self.post("/runs", {"dataset_id": did}).status_code, 202)
         self.assertEqual(self.post("/runs", {"dataset_id": did}).status_code, 409)
 
-    # -- transacciones (mejora 1 de MEJORAS_FUTURAS) ------------------
+    # -- concurrencia (mejora 2 de MEJORAS_FUTURAS) -------------------
 
+    def test_indice_unico_impide_dos_ejecuciones_activas(self):
+        """La base de datos sola impide dos ejecuciones activas.
+
+        Se intenta insertar una segunda fila en 'queued' saltandose la
+        comprobacion de la aplicacion: el indice unico lo impide.
+        """
+        import pymysql
+
+        did = self.post("/demo", {}).json()["id"]
+        # Primera ejecucion activa (queda en 'queued').
+        self.post("/runs", {"dataset_id": did})
+
+        conn = mydb.connect()
+        try:
+            with conn.cursor() as cur:
+                with self.assertRaises(pymysql.err.IntegrityError):
+                    cur.execute(
+                        "INSERT INTO runs (id, dataset_id, pipeline_id,"
+                        " trigger_kind, status, created_at)"
+                        " VALUES ('segundo', %s, 'p_ventas', 'manual',"
+                        " 'queued', NOW())",
+                        (did,),
+                    )
+        finally:
+            conn.close()
+
+        activos = self.store.one(
+            "SELECT COUNT(*) AS n FROM runs WHERE status IN ('queued', 'running')"
+        )["n"]
+        self.assertEqual(activos, 1)
+
+    def test_bloqueo_con_nombre_serializa_el_encolado(self):
+        """El bloqueo con nombre impide que dos procesos se cuelen."""
+        from backend import db as dbmod
+
+        with dbmod.named_lock("dataops_queue") as obtenido:
+            self.assertTrue(obtenido)
+
+            # Mientras el bloqueo esta tomado, otra conexion no lo obtiene.
+            with dbmod.named_lock("dataops_queue", timeout=0) as segundo:
+                self.assertFalse(segundo, "el bloqueo deberia estar tomado")
+
+    # -- transacciones (mejora 1 de MEJORAS_FUTURAS) ------------------
     def test_transaccion_revierte_aprobacion_parcial(self):
         """Si la aprobacion falla a la mitad, no queda nada a medias.
 

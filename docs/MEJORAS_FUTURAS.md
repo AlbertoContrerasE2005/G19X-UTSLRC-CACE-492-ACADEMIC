@@ -8,7 +8,11 @@ esto es backlog v1.1, no deuda pendiente.
 1. ~~Transacciones reales en `review()` y `Engine.process`~~ **Hecho**: `db.transaction()`
    agrupa la aprobación y la carga; con fallo se revierte todo. Cubierto por
    `test_transaccion_revierte_aprobacion_parcial`.
-2. Lock de concurrencia a nivel DB (`GET_LOCK` o `UPDATE ... WHERE status='queued'`).
+2. ~~Lock de concurrencia a nivel DB~~ **Hecho**: índice único real sobre la
+   columna generada `active_flag` (solo una ejecución `queued/running`) más
+   `GET_LOCK` en `db.named_lock()` para el encolado. Cubierto por
+   `test_indice_unico_impide_dos_ejecuciones_activas` y
+   `test_bloqueo_con_nombre_serializa_el_encolado`.
 3. Reintento con backoff + deadlock 1213 / lock timeout (hoy 1 reintento solo temporal).
 4. Validar `interval_minutes` también en scheduler ante edición manual de DB.
 5. Rate-limit en uploads/runs (hoy solo login) para no saturar disco.

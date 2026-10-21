@@ -67,6 +67,34 @@ def transaction():
         conn.close()
 
 
+@contextmanager
+def named_lock(name, timeout=10):
+    """Bloqueo con nombre de MySQL (GET_LOCK).
+
+    Sirve para las secciones donde hay que comprobar y luego escribir
+    (por ejemplo, comprobar que no hay una ejecucion activa y encolarla):
+    dos procesos a la vez no pueden entrar en la seccion.
+
+    Devuelve True si se logro el bloqueo, False si se agoto el tiempo.
+    """
+    conn = connect()
+    acquired = False
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT GET_LOCK(%s, %s)", (name, timeout))
+            fila = cur.fetchone()
+            acquired = bool(fila and list(fila.values())[0] == 1)
+        yield acquired
+    finally:
+        if acquired:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT RELEASE_LOCK(%s)", (name,))
+            except Exception:
+                pass
+        conn.close()
+
+
 def init_schema():
     """Crea la base y las tablas desde db/schema.sql."""
     from pathlib import Path
@@ -104,11 +132,16 @@ def init_schema():
                 "ALTER TABLE pipelines ADD COLUMN run_count INT NOT NULL DEFAULT 0",
                 "ALTER TABLE pipelines ADD COLUMN last_run VARCHAR(40)",
                 "ALTER TABLE pipelines ADD COLUMN steps_json TEXT",
+                # Indice unico real: una sola ejecucion activa (queued/running).
+                "ALTER TABLE runs ADD COLUMN active_flag TINYINT GENERATED ALWAYS"
+                " AS (IF(status IN ('queued', 'running'), 1, NULL)) VIRTUAL",
+                "ALTER TABLE runs DROP INDEX uq_one_active",
+                "ALTER TABLE runs ADD UNIQUE KEY uq_one_active (active_flag)",
             ):
                 try:
                     cur.execute(ddl)
                 except Exception:
-                    pass  # La columna ya existe.
+                    pass  # La columna o el indice ya existen.
             cur.execute(
                 "UPDATE pipelines SET project_id = 'p_default'"
                 " WHERE project_id IS NULL"

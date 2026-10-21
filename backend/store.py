@@ -4,6 +4,8 @@ import json
 import time
 import uuid
 
+import pymysql.err
+
 from backend import db as mydb
 from backend.settings import COLUMNS, now
 
@@ -118,21 +120,28 @@ class Store:
     def queue(
         self, dataset_id, user_id, kind="manual", parent=None, pipeline="p_ventas"
     ):
-        """Encola una ejecución. Solo 1 activa global (compatibilidad)."""
-        active = self.one(
-            "SELECT id FROM runs WHERE status IN ('queued', 'running') LIMIT 1"
-        )
-        if active:
-            raise ValueError("Ya hay una ejecución en curso. Espera.")
-        if not self.one("SELECT id FROM pipelines WHERE id = %s", (pipeline,)):
-            raise ValueError("Pipeline no encontrado.")
-        run_id = uuid.uuid4().hex
-        self.run(
-            "INSERT INTO runs (id, dataset_id, pipeline_id, trigger_kind,"
-            " status, created_at, created_by, parent_id)"
-            " VALUES (%s, %s, %s, %s, 'queued', %s, %s, %s)",
-            (run_id, dataset_id, pipeline, kind, now(), user_id, parent),
-        )
+        """Encola una ejecucion. Solo 1 activa global (compatibility)."""
+        # Seccion critica: comprobar y encolar bajo un bloqueo con nombre,
+        # para que dos procesos a la vez no pasen los dos la comprobacion.
+        with mydb.named_lock("dataops_queue") as bloqueo:
+            active = self.one(
+                "SELECT id FROM runs WHERE status IN ('queued', 'running') LIMIT 1"
+            )
+            if active:
+                raise ValueError("Ya hay una ejecucion en curso. Espera.")
+            if not self.one("SELECT id FROM pipelines WHERE id = %s", (pipeline,)):
+                raise ValueError("Pipeline no encontrado.")
+            run_id = uuid.uuid4().hex
+            try:
+                self.run(
+                    "INSERT INTO runs (id, dataset_id, pipeline_id, trigger_kind,"
+                    " status, created_at, created_by, parent_id)"
+                    " VALUES (%s, %s, %s, %s, 'queued', %s, %s, %s)",
+                    (run_id, dataset_id, pipeline, kind, now(), user_id, parent),
+                )
+            except pymysql.err.IntegrityError:
+                # El indice unico de la base lo impide: hay otra activa.
+                raise ValueError("Ya hay una ejecucion en curso. Espera.")
         self.audit(user_id, "run_queued", run_id)
         return run_id
 

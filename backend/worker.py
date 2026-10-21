@@ -42,40 +42,43 @@ class Worker:
 
     def schedule(self):
         """Dispara pipelines vencidos (1 por ciclo, si no hay activa)."""
-        if self.store.one(
-            "SELECT id FROM runs WHERE status IN ('queued', 'running') LIMIT 1"
-        ):
-            return
-        due = self.store.all(
-            "SELECT * FROM pipelines WHERE enabled = 1"
-            " AND dataset_id IS NOT NULL AND next_run IS NOT NULL"
-            " AND next_run <= %s ORDER BY next_run LIMIT 1",
-            (time.time(),),
-        )
-        for p in due:
-            new_id = uuid.uuid4().hex
-            conn = mydb.connect()
-            try:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "INSERT INTO runs (id, dataset_id, pipeline_id,"
-                        " trigger_kind, status, created_at)"
-                        " VALUES (%s, %s, %s, 'scheduled', 'queued', %s)",
-                        (new_id, p["dataset_id"], p["id"], now()),
-                    )
-                    cur.execute(
-                        "UPDATE pipelines SET next_run = %s WHERE id = %s",
-                        (
-                            time.time() + (p["interval_minutes"] or 0) * 60,
-                            p["id"],
-                        ),
-                    )
-            except Exception:
+        # Bajo el mismo bloqueo que usa la API para encolar: comprobar y
+        # encolar sin que otro proceso se cuele en medio.
+        with mydb.named_lock("dataops_queue") as _:
+            if self.store.one(
+                "SELECT id FROM runs WHERE status IN ('queued', 'running') LIMIT 1"
+            ):
                 return
-            finally:
-                conn.close()
-            self.store.audit(None, "scheduled_run", new_id)
-            break
+            due = self.store.all(
+                "SELECT * FROM pipelines WHERE enabled = 1"
+                " AND dataset_id IS NOT NULL AND next_run IS NOT NULL"
+                " AND next_run <= %s ORDER BY next_run LIMIT 1",
+                (time.time(),),
+            )
+            for p in due:
+                new_id = uuid.uuid4().hex
+                conn = mydb.connect()
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO runs (id, dataset_id, pipeline_id,"
+                            " trigger_kind, status, created_at)"
+                            " VALUES (%s, %s, %s, 'scheduled', 'queued', %s)",
+                            (new_id, p["dataset_id"], p["id"], now()),
+                        )
+                        cur.execute(
+                            "UPDATE pipelines SET next_run = %s WHERE id = %s",
+                            (
+                                time.time() + (p["interval_minutes"] or 0) * 60,
+                                p["id"],
+                            ),
+                        )
+                except Exception:
+                    return
+                finally:
+                    conn.close()
+                self.store.audit(None, "scheduled_run", new_id)
+                break
 
     def tick(self):
         """Atiende un run encolado. Devuelve True si hizo algo."""
