@@ -1,10 +1,21 @@
 """Generación de reportes (JSON/CSV/PDF local)."""
+
 from __future__ import annotations
 import csv
 import io
 
 
-def report_payload(project, dataset, run, profile, quality, anomalies, recommendations, summary, rtype="analisis") -> dict:
+def report_payload(
+    project,
+    dataset,
+    run,
+    profile,
+    quality,
+    anomalies,
+    recommendations,
+    summary,
+    rtype="analisis",
+) -> dict:
     return {
         "type": rtype,
         "project": (project or {}).get("name", "—") if project else "—",
@@ -16,9 +27,18 @@ def report_payload(project, dataset, run, profile, quality, anomalies, recommend
         "anomalias": anomalies or [],
         "recomendaciones": recommendations or "",
         "resumen": summary or "",
-        "run": {"id": (run or {}).get("id"), "status": (run or {}).get("status"),
-                "total": (run or {}).get("total"), "loaded": (run or {}).get("loaded"),
-                "invalid": (run or {}).get("invalid"), "anomalies": (run or {}).get("anomalies")} if run else None,
+        "run": (
+            {
+                "id": (run or {}).get("id"),
+                "status": (run or {}).get("status"),
+                "total": (run or {}).get("total"),
+                "loaded": (run or {}).get("loaded"),
+                "invalid": (run or {}).get("invalid"),
+                "anomalies": (run or {}).get("anomalies"),
+            }
+            if run
+            else None
+        ),
     }
 
 
@@ -36,12 +56,18 @@ def to_csv(payload: dict) -> str:
         w.writerow([f"Calidad {k}", q.get(k)])
     w.writerow([])
     w.writerow(["Problemas de calidad"])
-    for i in (q.get("issues") or []):
+    for i in q.get("issues") or []:
         w.writerow([i.get("column"), i.get("problem")])
     w.writerow([])
     w.writerow(["Anomalías"])
     for a in (payload.get("anomalias") or [])[:100]:
-        w.writerow([a.get("column_name", a.get("column", "")), a.get("value", ""), a.get("reason", "")])
+        w.writerow(
+            [
+                a.get("column_name", a.get("column", "")),
+                a.get("value", ""),
+                a.get("reason", ""),
+            ]
+        )
     w.writerow([])
     w.writerow(["Resumen"])
     w.writerow([payload.get("resumen", "")])
@@ -57,13 +83,17 @@ def to_pdf(payload: dict) -> bytes:
         from reportlab.lib.units import mm
         from reportlab.pdfgen import canvas
     except ImportError as exc:
-        raise ValueError("PDF no disponible: instala reportlab (pip install reportlab).") from exc
+        raise ValueError(
+            "PDF no disponible: instala reportlab (pip install reportlab)."
+        ) from exc
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     y = h - 20 * mm
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(15 * mm, y, "Reporte DataOps — " + str(payload.get("type", "analisis")).title())
+    c.drawString(
+        15 * mm, y, "Reporte DataOps — " + str(payload.get("type", "analisis")).title()
+    )
     y -= 8 * mm
     c.setFont("Helvetica", 10)
     lines = [
@@ -75,6 +105,7 @@ def to_pdf(payload: dict) -> bytes:
     for ln in lines:
         c.drawString(15 * mm, y, ln[:110])
         y -= 5 * mm
+
     def block(title, text):
         nonlocal y
         y -= 3 * mm
@@ -91,9 +122,22 @@ def to_pdf(payload: dict) -> bytes:
                 c.drawString(15 * mm, y, para[:115])
                 para = para[115:]
                 y -= 4 * mm
+
     q = payload.get("calidad", {})
-    probs = "\n".join(f"- {i.get('column')}: {i.get('problem')}" for i in (q.get("issues") or [])[:20]) or "Sin problemas relevantes."
-    anoms = "\n".join(f"- {a.get('column_name', a.get('column',''))}: {a.get('value','')} — {a.get('reason','')}" for a in (payload.get("anomalias") or [])[:20]) or "Sin anomalías."
+    probs = (
+        "\n".join(
+            f"- {i.get('column')}: {i.get('problem')}"
+            for i in (q.get("issues") or [])[:20]
+        )
+        or "Sin problemas relevantes."
+    )
+    anoms = (
+        "\n".join(
+            f"- {a.get('column_name', a.get('column',''))}: {a.get('value','')} — {a.get('reason','')}"
+            for a in (payload.get("anomalias") or [])[:20]
+        )
+        or "Sin anomalías."
+    )
     block("Resumen", payload.get("resumen", ""))
     block("Problemas de calidad", probs)
     block("Anomalías", anoms)
