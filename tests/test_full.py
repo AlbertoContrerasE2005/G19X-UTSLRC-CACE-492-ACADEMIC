@@ -1,115 +1,26 @@
-"""Batería integral DataOps Final (base dataops_test).
+"""Bateria integral DataOps Final (base dataops_test).
 
-Cubre: auth y roles, datasets (csv/xlsx/sql/dinámicos/límites),
-pipelines CRUD, runs, aprobación, métricas, plataforma
-(proyectos, reglas, anomalías, alertas, reportes, actividad,
+Cubre: auth y roles, datasets (csv/xlsx/sql/dinamicos/limites),
+pipelines CRUD, runs, aprobacion, metricas, plataforma
+(proyectos, reglas, anomalias, alertas, reportes, actividad,
 dashboard, IA, config, usuarios) y exports.
+
+La preparacion de la base vive en tests/base.py.
 """
 
 import base64
 import io
 import os
+import sys
 import unittest
 
-os.environ["DATAOPS_DB_NAME"] = "dataops_test"
+sys.path.insert(0, os.path.dirname(__file__))
 
-from fastapi.testclient import TestClient
-
-from backend import db as mydb
-from backend.app import create_app
-
-H = {"X-Requested-With": "DataOps"}
-ADMIN = {"username": "qadmin", "password": "ClaveQa2026!!", "name": "QA"}
+from base import ADMIN, H, BaseTestCase
+from openpyxl import Workbook
 
 
-def clean_db():
-    conn = mydb.connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SET FOREIGN_KEY_CHECKS = 0")
-            for t in (
-                "ai_queries",
-                "activity_logs",
-                "approvals",
-                "audit",
-                "records",
-                "sales",
-                "run_rows",
-                "run_logs",
-                "runs",
-                "reports",
-                "anomalies",
-                "alerts",
-                "quality_results",
-                "quality_rules",
-                "project_members",
-                "datasets",
-                "pipelines",
-                "projects",
-                "sessions",
-                "users",
-            ):
-                cur.execute(f"TRUNCATE TABLE {t}")
-            cur.execute("SET FOREIGN_KEY_CHECKS = 1")
-    finally:
-        conn.close()
-
-
-def fresh_schema():
-    from pathlib import Path
-
-    sql = (Path(__file__).resolve().parents[1] / "db" / "schema.sql").read_text()
-    conn = mydb.connect()
-    try:
-        with conn.cursor() as cur:
-            clean = "\n".join(
-                ln for ln in sql.splitlines() if not ln.strip().startswith("--")
-            )
-            for stmt in [s.strip() for s in clean.split(";")]:
-                if stmt:
-                    cur.execute(stmt)
-    finally:
-        conn.close()
-
-
-class Base(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        conn = mydb.connect(db="")
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP DATABASE IF EXISTS dataops_test")
-                cur.execute("CREATE DATABASE dataops_test CHARACTER SET utf8mb4")
-        finally:
-            conn.close()
-        fresh_schema()
-
-    def setUp(self):
-        clean_db()
-        fresh_schema()
-        self.app = create_app(background=False)
-        self.client = TestClient(self.app)
-        self.client.__enter__()
-        self.post("/setup", ADMIN)
-        self.post("/login", ADMIN)
-
-    def tearDown(self):
-        self.client.__exit__(None, None, None)
-
-    def post(self, path, value):
-        return self.client.post("/api" + path, json=value, headers=H)
-
-    def get(self, path):
-        return self.client.get("/api" + path)
-
-    def demo_run(self):
-        d = self.post("/demo", {}).json()
-        rid = self.post("/runs", {"dataset_id": d["id"]}).json()["id"]
-        self.app.state.worker.tick()
-        return rid
-
-
-class TestAuth(Base):
+class TestAuth(BaseTestCase):
     def test_setup_login_logout(self):
         self.assertEqual(self.post("/setup", ADMIN).status_code, 409)
         me = self.get("/me").json()
@@ -181,7 +92,7 @@ class TestAuth(Base):
         )
 
 
-class TestDatasets(Base):
+class TestDatasets(BaseTestCase):
     def test_csv_excel_sql(self):
         r = self.post(
             "/datasets",
@@ -196,8 +107,6 @@ class TestDatasets(Base):
             r.json()["columns"],
             ["id", "fecha", "producto", "cantidad", "precio_unitario"],
         )
-
-        from openpyxl import Workbook
 
         wb = Workbook()
         ws = wb.active
@@ -261,7 +170,7 @@ class TestDatasets(Base):
         self.assertIn("general", qual)
 
 
-class TestPipelines(Base):
+class TestPipelines(BaseTestCase):
     def test_crudprogramacion(self):
         pid = self.post("/pipelines", {"name": "P1", "description": "d"}).json()["id"]
         self.assertEqual(self.post("/pipelines", {"name": ""}).status_code, 400)
@@ -306,7 +215,7 @@ class TestPipelines(Base):
         )
 
 
-class TestRunsIA(Base):
+class TestRunsIA(BaseTestCase):
     def test_flujo_completo_y_aprobacion(self):
         rid = self.demo_run()
         run = self.get(f"/runs/{rid}").json()
@@ -343,7 +252,7 @@ class TestRunsIA(Base):
         self.assertGreaterEqual(run["anomalies"], 1)
 
     def test_metricas_y_plataforma(self):
-        rid = self.demo_run()
+        self.demo_run()
         self.assertEqual(self.get("/metrics/summary").status_code, 200)
         self.assertEqual(self.get("/metrics/runs?days=7").status_code, 200)
         self.assertEqual(self.get("/ready").status_code, 200)
@@ -360,11 +269,14 @@ class TestRunsIA(Base):
                 "question": "total de cantidad",
             },
         )
-        # Puede ser 202/200 según worker; solo verifica que responde JSON.
+        # Puede ser 202/200 segun worker; solo verifica que responde JSON.
         self.assertIn(r.status_code, (200, 202, 409))
         rep = self.post(
             "/reports",
-            {"dataset_id": self.post("/demo", {}).json()["id"], "type": "analisis"},
+            {
+                "dataset_id": self.post("/demo", {}).json()["id"],
+                "type": "analisis",
+            },
         )
         if rep.status_code == 200:
             dl = self.get(f"/reports/{rep.json()['id']}/download")

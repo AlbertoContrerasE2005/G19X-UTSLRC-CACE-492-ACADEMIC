@@ -8,6 +8,8 @@ Ahora cada dominio tiene su modulo:
 
 Esta prueba llama a endpoints de esos modulos para garantizar que la
 division no rompio nada.
+
+La preparacion de la base vive en tests/base.py.
 """
 
 import os
@@ -15,49 +17,11 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(__file__))
-os.environ["DATAOPS_DB_NAME"] = "dataops_test"
 
-from fastapi.testclient import TestClient
-
-from backend import db as mydb
-from backend.app import create_app
-from test_full import clean_db, fresh_schema, H, ADMIN
+from base import ADMIN, H, BaseTestCase
 
 
-class PlatformModulesTest(unittest.TestCase):
-    """Endpoints de platform_quality.py y platform_reports.py."""
-
-    @classmethod
-    def setUpClass(cls):
-        conn = mydb.connect(db="")
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP DATABASE IF EXISTS dataops_test")
-                cur.execute("CREATE DATABASE dataops_test CHARACTER SET utf8mb4")
-        finally:
-            conn.close()
-        fresh_schema()
-
-    def setUp(self):
-        clean_db()
-        fresh_schema()
-        self.app = create_app(background=False)
-        self.c = TestClient(self.app)
-        self.c.__enter__()
-        self.post("/setup", ADMIN)
-        self.post("/login", ADMIN)
-
-    def tearDown(self):
-        self.c.__exit__(None, None, None)
-
-    def post(self, path, value):
-        return self.c.post("/api" + path, json=value, headers=H)
-
-    def get(self, path):
-        return self.c.get("/api" + path)
-
-    def request(self, method, path, payload=None):
-        return self.c.request(method, "/api" + path, json=payload, headers=H)
+class PlatformModulesTest(BaseTestCase):
 
     # -- platform_quality.py -------------------------------------------
 
@@ -136,7 +100,7 @@ class PlatformModulesTest(unittest.TestCase):
 
                 self.assertEqual(self.get(f"/reports/{rid}").status_code, 200)
 
-                dl = self.c.get(f"/api/reports/{rid}/download")
+                dl = self.client.get(f"/api/reports/{rid}/download")
                 self.assertEqual(dl.status_code, 200)
                 if fmt == "pdf":
                     self.assertTrue(dl.content.startswith(b"%PDF"))

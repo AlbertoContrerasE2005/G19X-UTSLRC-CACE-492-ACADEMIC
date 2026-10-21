@@ -1,48 +1,18 @@
-"""Cobertura total 1x1 + fallos provocados (base dataops_test)."""
+"""Cobertura total 1x1 + fallos provocados (base dataops_test).
+
+La preparacion de la base vive en tests/base.py.
+"""
 
 import os
 import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(__file__))
-os.environ["DATAOPS_DB_NAME"] = "dataops_test"
 
-from fastapi.testclient import TestClient
-
-from backend import db as mydb
-from backend.app import create_app
-from test_full import clean_db, fresh_schema, H, ADMIN
+from base import ADMIN, H, BaseTestCase
 
 
-class All(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        conn = mydb.connect(db="")
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP DATABASE IF EXISTS dataops_test")
-                cur.execute("CREATE DATABASE dataops_test CHARACTER SET utf8mb4")
-        finally:
-            conn.close()
-        fresh_schema()
-
-    def setUp(self):
-        clean_db()
-        fresh_schema()
-        self.app = create_app(background=False)
-        self.c = TestClient(self.app)
-        self.c.__enter__()
-        self.post("/setup", ADMIN)
-        self.post("/login", ADMIN)
-
-    def tearDown(self):
-        self.c.__exit__(None, None, None)
-
-    def post(self, path, value):
-        return self.c.post("/api" + path, json=value, headers=H)
-
-    def get(self, path):
-        return self.c.get("/api" + path)
+class All(BaseTestCase):
 
     # ---- auth y usuarios ----
 
@@ -65,13 +35,13 @@ class All(unittest.TestCase):
     def test_02_admin_no_se_queda_sin_admin(self):
         me = self.get("/me").json()
         self.assertEqual(
-            self.c.request(
+            self.client.request(
                 "PUT", f"/api/users/{me['id']}", json={"role": "viewer"}, headers=H
             ).status_code,
             400,
         )
         self.assertEqual(
-            self.c.delete(f"/api/users/{me['id']}", headers=H).status_code, 400
+            self.client.delete(f"/api/users/{me['id']}", headers=H).status_code, 400
         )
 
     def test_03_viewer_bloqueado_en_todo(self):
@@ -93,9 +63,11 @@ class All(unittest.TestCase):
             ("POST", "/projects", {"name": "x"}),
             ("POST", "/quality/rules", {"column": "a", "condition": "gte"}),
         ]:
-            r = self.c.request(method, "/api" + path, json=payload, headers=H)
+            r = self.client.request(method, "/api" + path, json=payload, headers=H)
             self.assertEqual(r.status_code, 403, path)
-        self.assertEqual(self.c.delete("/api/alerts/1", headers=H).status_code, 403)
+        self.assertEqual(
+            self.client.delete("/api/alerts/1", headers=H).status_code, 403
+        )
 
     # ---- datasets ----
 
@@ -132,7 +104,7 @@ class All(unittest.TestCase):
         rid = self.post("/runs", {"dataset_id": did}).json()["id"]
         self.app.state.worker.tick()
         self.assertEqual(
-            self.c.delete(f"/api/datasets/{did}", headers=H).status_code, 200
+            self.client.delete(f"/api/datasets/{did}", headers=H).status_code, 200
         )
         self.assertEqual(self.get(f"/runs/{rid}").status_code, 404)
 
@@ -202,10 +174,10 @@ class All(unittest.TestCase):
         rid = self.post("/runs", {"dataset_id": did}).json()["id"]
         self.app.state.worker.tick()
         for kind in ("all", "issues", "accepted", "pending", "rejected"):
-            r = self.c.get(f"/api/runs/{rid}/export?kind={kind}")
+            r = self.client.get(f"/api/runs/{rid}/export?kind={kind}")
             self.assertEqual(r.status_code, 200, kind)
         self.assertEqual(
-            self.c.get(f"/api/runs/{rid}/export?kind=raro").status_code, 400
+            self.client.get(f"/api/runs/{rid}/export?kind=raro").status_code, 400
         )
 
     def test_11_review_errores(self):
@@ -263,7 +235,7 @@ class All(unittest.TestCase):
         ev = self.post("/quality/evaluate", {"dataset_id": did}).json()
         self.assertIn("quality", ev)
         self.assertEqual(
-            self.c.request(
+            self.client.request(
                 "PUT",
                 f"/api/quality/rules/{rid}",
                 json={"condition": "raro"},
@@ -272,10 +244,11 @@ class All(unittest.TestCase):
             400,
         )
         self.assertEqual(
-            self.c.delete(f"/api/quality/rules/{rid}", headers=H).status_code, 200
+            self.client.delete(f"/api/quality/rules/{rid}", headers=H).status_code, 200
         )
         self.assertEqual(
-            self.c.delete("/api/quality/rules/rl_falsa", headers=H).status_code, 404
+            self.client.delete("/api/quality/rules/rl_falsa", headers=H).status_code,
+            404,
         )
         self.assertEqual(len(self.get("/quality/results").json()), 0)
 
@@ -287,13 +260,13 @@ class All(unittest.TestCase):
         self.assertGreaterEqual(items["total"], 2)
         aid = items["items"][0]["id"]
         self.assertEqual(
-            self.c.request(
+            self.client.request(
                 "PATCH", f"/api/anomalies/{aid}", json={"status": "raro"}, headers=H
             ).status_code,
             400,
         )
         self.assertEqual(
-            self.c.request(
+            self.client.request(
                 "PATCH", f"/api/anomalies/{aid}", json={"status": "resuelta"}, headers=H
             ).status_code,
             200,
@@ -305,7 +278,9 @@ class All(unittest.TestCase):
         )
         self.assertEqual(self.post("/alerts/read-all", {}).status_code, 200)
         self.assertEqual(
-            self.c.delete(f"/api/alerts/{al['items'][0]['id']}", headers=H).status_code,
+            self.client.delete(
+                f"/api/alerts/{al['items'][0]['id']}", headers=H
+            ).status_code,
             200,
         )
 

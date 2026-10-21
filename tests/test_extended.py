@@ -1,5 +1,8 @@
-"""Ronda extendida: estrés 5000 filas, recuperación, programación,
-idempotencia, exports y neutralización de fórmulas."""
+"""Ronda extendida: estres 5000 filas, recuperacion, programacion,
+idempotencia, exports y neutralizacion de formulas.
+
+La preparacion de la base vive en tests/base.py.
+"""
 
 import os
 import sys
@@ -8,41 +11,11 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-os.environ["DATAOPS_DB_NAME"] = "dataops_test"
-
-from fastapi.testclient import TestClient
-
 from backend import db as mydb
-from backend.app import create_app
-from test_full import clean_db, fresh_schema, H, ADMIN
+from base import ADMIN, H, BaseTestCase
 
 
-class Extended(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        conn = mydb.connect(db="")
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DROP DATABASE IF EXISTS dataops_test")
-                cur.execute("CREATE DATABASE dataops_test CHARACTER SET utf8mb4")
-        finally:
-            conn.close()
-        fresh_schema()
-
-    def setUp(self):
-        clean_db()
-        fresh_schema()
-        self.app = create_app(background=False)
-        self.client = TestClient(self.app)
-        self.client.__enter__()
-        self.post("/setup", ADMIN)
-        self.post("/login", ADMIN)
-
-    def tearDown(self):
-        self.client.__exit__(None, None, None)
-
-    def post(self, path, value):
-        return self.client.post("/api" + path, json=value, headers=H)
+class Extended(BaseTestCase):
 
     def test_estres_5000(self):
         rows = ["id,fecha,producto,cantidad,precio_unitario"]
