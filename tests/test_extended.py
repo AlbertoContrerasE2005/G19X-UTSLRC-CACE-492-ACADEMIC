@@ -94,6 +94,81 @@ class Extended(BaseTestCase):
         self.assertEqual(self.post("/runs", {"dataset_id": did}).status_code, 202)
         self.assertEqual(self.post("/runs", {"dataset_id": did}).status_code, 409)
 
+    # -- transacciones (mejora 1 de MEJORAS_FUTURAS) ------------------
+
+    def test_transaccion_revierte_aprobacion_parcial(self):
+        """Si la aprobacion falla a la mitad, no queda nada a medias.
+
+        Se inyecta un fallo en la segunda insercion: ni la carga, ni los
+        contadores, ni la auditoria deben quedar guardados.
+        """
+        from contextlib import contextmanager
+
+        import backend.db as dbmod
+
+        run_id = self.demo_run()
+        detail = self.get(f"/runs/{run_id}").json()
+        lines = [r["line"] for r in detail["rows"] if r["status"] == "anomaly"]
+        self.assertEqual(len(lines), 2)
+
+        sales_antes = self.store.one("SELECT COUNT(*) AS n FROM sales")["n"]
+        approved_antes = self.store.one(
+            "SELECT approved FROM runs WHERE id = %s", (run_id,)
+        )["approved"]
+
+        # Cursor que falla en la segunda carga a sales.
+        class CursorQueFalla:
+            def __init__(self, cur):
+                self._cur = cur
+                self.inserciones = 0
+
+            def execute(self, sql, params=None):
+                if "INSERT IGNORE INTO sales" in sql:
+                    self.inserciones += 1
+                    if self.inserciones == 2:
+                        raise RuntimeError("Fallo simulado a mitad de la carga")
+                if params is None:
+                    return self._cur.execute(sql)
+                return self._cur.execute(sql, params)
+
+            def __getattr__(self, name):
+                return getattr(self._cur, name)
+
+        transaccion_real = dbmod.transaction
+
+        @contextmanager
+        def transaccion_con_fallo():
+            with transaccion_real() as cur:
+                yield CursorQueFalla(cur)
+
+        dbmod.transaction = transaccion_con_fallo
+        try:
+            # El error del motor revierte la transaccion y sube como 500.
+            with self.assertRaises(RuntimeError):
+                self.post(
+                    f"/runs/{run_id}/approve",
+                    {"lines": lines, "motivo": "Prueba de transaccion"},
+                )
+        finally:
+            dbmod.transaction = transaccion_real
+
+        # Nada quedo a medias.
+        sales_despues = self.store.one("SELECT COUNT(*) AS n FROM sales")["n"]
+        approved_despues = self.store.one(
+            "SELECT approved FROM runs WHERE id = %s", (run_id,)
+        )["approved"]
+        approvals = self.store.one(
+            "SELECT COUNT(*) AS n FROM approvals WHERE run_id = %s", (run_id,)
+        )["n"]
+        anomalias = self.store.one(
+            "SELECT anomalies FROM runs WHERE id = %s", (run_id,)
+        )["anomalies"]
+
+        self.assertEqual(sales_despues, sales_antes, "se cargaron filas de mas")
+        self.assertEqual(approved_despues, approved_antes, "el contador cambio")
+        self.assertEqual(approvals, 0, "quedo auditoria sin carga")
+        self.assertEqual(anomalias, 2, "las anomalias siguen pendientes")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -5,7 +5,9 @@ esto es backlog v1.1, no deuda pendiente.
 
 ## Robustez
 
-1. Transacciones reales en `review()` y `Engine.process` (hoy N commits sueltos).
+1. ~~Transacciones reales en `review()` y `Engine.process`~~ **Hecho**: `db.transaction()`
+   agrupa la aprobación y la carga; con fallo se revierte todo. Cubierto por
+   `test_transaccion_revierte_aprobacion_parcial`.
 2. Lock de concurrencia a nivel DB (`GET_LOCK` o `UPDATE ... WHERE status='queued'`).
 3. Reintento con backoff + deadlock 1213 / lock timeout (hoy 1 reintento solo temporal).
 4. Validar `interval_minutes` también en scheduler ante edición manual de DB.

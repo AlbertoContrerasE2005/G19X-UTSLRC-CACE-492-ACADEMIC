@@ -150,122 +150,120 @@ class Store:
         if len(motivo) < 3:
             raise ValueError("Motivo de al menos 3 caracteres.")
 
-        conn = mydb.connect()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT r.*, d.columns_json FROM runs r"
-                    " JOIN datasets d ON d.id = r.dataset_id"
-                    " WHERE r.id = %s AND r.status = 'completed'",
-                    (run_id,),
-                )
-                run = cur.fetchone()
-                if not run:
-                    raise ValueError("Solo runs completados se revisan.")
-                columns = json.loads(run["columns_json"] or "[]") or COLUMNS
-                is_sales = columns == COLUMNS
+        # Todo en una transaccion: si algo falla, no queda ni la carga ni
+        # los contadores a medias (una caida a mitad no descuadra el run).
+        with mydb.transaction() as cur:
+            cur.execute(
+                "SELECT r.*, d.columns_json FROM runs r"
+                " JOIN datasets d ON d.id = r.dataset_id"
+                " WHERE r.id = %s AND r.status = 'completed'",
+                (run_id,),
+            )
+            run = cur.fetchone()
+            if not run:
+                raise ValueError("Solo runs completados se revisan.")
+            columns = json.loads(run["columns_json"] or "[]") or COLUMNS
+            is_sales = columns == COLUMNS
 
-                marks = ",".join(["%s"] * len(ids))
-                cur.execute(
-                    f"SELECT line, data_json FROM run_rows"
-                    f" WHERE run_id = %s AND line IN ({marks})"
-                    f" AND status = 'anomaly'",
-                    (run_id, *ids),
-                )
-                pending = cur.fetchall()
-                if not pending:
-                    raise ValueError("Sin anomalías pendientes en esas filas.")
+            marks = ",".join(["%s"] * len(ids))
+            cur.execute(
+                f"SELECT line, data_json FROM run_rows"
+                f" WHERE run_id = %s AND line IN ({marks})"
+                f" AND status = 'anomaly'",
+                (run_id, *ids),
+            )
+            pending = cur.fetchall()
+            if not pending:
+                raise ValueError("Sin anomalías pendientes en esas filas.")
 
-                loaded = existing = rejected = 0
-                for row in pending:
-                    d = json.loads(row["data_json"])
-                    if action == "approved":
-                        if is_sales:
-                            done = cur.execute(
-                                "INSERT IGNORE INTO sales"
-                                " (id, date, product, quantity,"
-                                " unit_price, total, source_run)"
-                                " VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                                (
-                                    d["id"],
-                                    d["fecha"],
-                                    d["producto"],
-                                    int(d["cantidad"]),
-                                    d["precio_unitario"],
-                                    d.get("total", "0.00"),
-                                    run_id,
-                                ),
-                            )
-                        else:
-                            key = str(d.get(columns[0], ""))[:256]
-                            done = cur.execute(
-                                "INSERT IGNORE INTO records"
-                                " (pipeline_id, run_id, `key`, data_json, created_at)"
-                                " VALUES (%s, %s, %s, %s, %s)",
-                                (
-                                    run["pipeline_id"],
-                                    run_id,
-                                    key,
-                                    json.dumps(d, ensure_ascii=False),
-                                    now(),
-                                ),
-                            )
-                        if done:
-                            status, reason, loaded = (
-                                "loaded",
-                                f"Aprobado por {username}: {motivo}",
-                                loaded + 1,
-                            )
-                        else:
-                            status, reason, existing = (
-                                "existing",
-                                f"Aprobado pero ya existía ({username}): {motivo}",
-                                existing + 1,
-                            )
-                    else:
-                        status, reason, rejected = (
-                            "rejected",
-                            f"Rechazado por {username}: {motivo}",
-                            rejected + 1,
-                        )
-                    cur.execute(
-                        "UPDATE run_rows SET status = %s, reason = %s"
-                        " WHERE run_id = %s AND line = %s",
-                        (status, reason, run_id, row["line"]),
-                    )
-                    cur.execute(
-                        "INSERT INTO approvals"
-                        " (run_id, line, action, motivo, user_id, created_at)"
-                        " VALUES (%s, %s, %s, %s, %s, %s)",
-                        (run_id, row["line"], action, motivo, user_id, now()),
-                    )
-
-                n = len(pending)
+            loaded = existing = rejected = 0
+            for row in pending:
+                d = json.loads(row["data_json"])
                 if action == "approved":
-                    cur.execute(
-                        "UPDATE runs SET anomalies = anomalies - %s,"
-                        " loaded = loaded + %s, existing = existing + %s,"
-                        " approved = approved + %s WHERE id = %s",
-                        (n, loaded, existing, n, run_id),
-                    )
+                    if is_sales:
+                        done = cur.execute(
+                            "INSERT IGNORE INTO sales"
+                            " (id, date, product, quantity,"
+                            " unit_price, total, source_run)"
+                            " VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                            (
+                                d["id"],
+                                d["fecha"],
+                                d["producto"],
+                                int(d["cantidad"]),
+                                d["precio_unitario"],
+                                d.get("total", "0.00"),
+                                run_id,
+                            ),
+                        )
+                    else:
+                        key = str(d.get(columns[0], ""))[:256]
+                        done = cur.execute(
+                            "INSERT IGNORE INTO records"
+                            " (pipeline_id, run_id, `key`, data_json, created_at)"
+                            " VALUES (%s, %s, %s, %s, %s)",
+                            (
+                                run["pipeline_id"],
+                                run_id,
+                                key,
+                                json.dumps(d, ensure_ascii=False),
+                                now(),
+                            ),
+                        )
+                    if done:
+                        status, reason, loaded = (
+                            "loaded",
+                            f"Aprobado por {username}: {motivo}",
+                            loaded + 1,
+                        )
+                    else:
+                        status, reason, existing = (
+                            "existing",
+                            f"Aprobado pero ya existía ({username}): {motivo}",
+                            existing + 1,
+                        )
                 else:
-                    cur.execute(
-                        "UPDATE runs SET anomalies = anomalies - %s,"
-                        " rejected = rejected + %s WHERE id = %s",
-                        (n, n, run_id),
+                    status, reason, rejected = (
+                        "rejected",
+                        f"Rechazado por {username}: {motivo}",
+                        rejected + 1,
                     )
                 cur.execute(
-                    "INSERT INTO run_logs (run_id, created_at, stage, message)"
-                    " VALUES (%s, %s, 'approval', %s)",
-                    (run_id, now(), f"{n} {action} por {username}: {motivo}"),
+                    "UPDATE run_rows SET status = %s, reason = %s"
+                    " WHERE run_id = %s AND line = %s",
+                    (status, reason, run_id, row["line"]),
                 )
                 cur.execute(
-                    "INSERT INTO audit (created_at, user_id, action, entity_id)"
-                    " VALUES (%s, %s, %s, %s)",
-                    (now(), user_id, f"anomaly_{action}", run_id),
+                    "INSERT INTO approvals"
+                    " (run_id, line, action, motivo, user_id, created_at)"
+                    " VALUES (%s, %s, %s, %s, %s, %s)",
+                    (run_id, row["line"], action, motivo, user_id, now()),
                 )
-        finally:
-            conn.close()
+
+            n = len(pending)
+            if action == "approved":
+                cur.execute(
+                    "UPDATE runs SET anomalies = anomalies - %s,"
+                    " loaded = loaded + %s, existing = existing + %s,"
+                    " approved = approved + %s WHERE id = %s",
+                    (n, loaded, existing, n, run_id),
+                )
+            else:
+                cur.execute(
+                    "UPDATE runs SET anomalies = anomalies - %s,"
+                    " rejected = rejected + %s WHERE id = %s",
+                    (n, n, run_id),
+                )
+            cur.execute(
+                "INSERT INTO run_logs (run_id, created_at, stage, message)"
+                " VALUES (%s, %s, 'approval', %s)",
+                (run_id, now(), f"{n} {action} por {username}: {motivo}"),
+            )
+            cur.execute(
+                "INSERT INTO audit (created_at, user_id, action, entity_id)"
+                " VALUES (%s, %s, %s, %s)",
+                (now(), user_id, f"anomaly_{action}", run_id),
+            )
         return {
             "reviewed": n,
             "loaded": loaded,

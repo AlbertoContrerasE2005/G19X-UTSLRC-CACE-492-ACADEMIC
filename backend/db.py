@@ -10,6 +10,7 @@ DATAOPS_DB_PORT en el archivo .env.
 """
 
 import os
+from contextlib import contextmanager
 
 import pymysql
 import pymysql.cursors
@@ -39,6 +40,31 @@ def connect(db=None):
         else:
             cfg.pop("database", None)
     return pymysql.connect(**cfg)
+
+
+@contextmanager
+def transaction():
+    """Abre una conexion con transaccion.
+
+    Todo lo que se ejecuta dentro se confirma junto al salir, o se
+    revierte entero si hay un error. Se usa para operaciones que deben
+    quedar consistentes: aprobar filas y cargar un run.
+    """
+    cfg = dict(settings())
+    cfg["autocommit"] = False
+    conn = pymysql.connect(**cfg)
+    try:
+        with conn.cursor() as cur:
+            yield cur
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        conn.close()
 
 
 def init_schema():
