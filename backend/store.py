@@ -7,7 +7,7 @@ import uuid
 import pymysql.err
 
 from backend import db as mydb
-from backend.settings import COLUMNS, now
+from backend.settings import COLUMNS, BusyError, now
 
 # ---------------------------------------------------------------- storage
 
@@ -124,6 +124,13 @@ class Store:
         # Seccion critica: comprobar y encolar bajo un bloqueo con nombre,
         # para que dos procesos a la vez no pasen los dos la comprobacion.
         with mydb.named_lock("dataops_queue") as bloqueo:
+            if not bloqueo:
+                # Otro proceso tiene la seccion: no se puede garantizar
+                # que no haya una ejecucion activa. Se pide reintentar.
+                raise BusyError(
+                    "El sistema esta ocupado en este momento."
+                    " Intenta de nuevo en un segundo."
+                )
             active = self.one(
                 "SELECT id FROM runs WHERE status IN ('queued', 'running') LIMIT 1"
             )

@@ -7,7 +7,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
 from backend.data_io import csv_export
-from backend.settings import COLUMNS, now
+from backend.settings import COLUMNS, BusyError, now
 
 
 def register(ctx):
@@ -43,6 +43,9 @@ def register(ctx):
                 parent,
                 pipeline_id,
             )
+        except BusyError as exc:
+            # Ocupado ahora mismo: el cliente puede reintentar.
+            raise HTTPException(503, str(exc))
         except ValueError as exc:
             raise HTTPException(409, str(exc))
         return JSONResponse({"id": run_id, "status": "queued"}, status_code=202)

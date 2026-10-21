@@ -98,6 +98,36 @@ class Extended(BaseTestCase):
 
     # -- concurrencia (mejora 2 de MEJORAS_FUTURAS) -------------------
 
+    def test_bloqueo_no_conseguido_responde_reintentar(self):
+        """Si el bloqueo no se consigue, se pide reintentar (503).
+
+        Se simula que otro proceso tiene la seccion ocupada.
+        """
+        from contextlib import contextmanager
+
+        from backend import db as dbmod
+
+        did = self.post("/demo", {}).json()["id"]
+        real = dbmod.named_lock
+
+        @contextmanager
+        def sin_bloqueo(name, timeout=10):
+            yield False  # como si GET_LOCK no hubiera pondering el bloqueo
+
+        dbmod.named_lock = sin_bloqueo
+        try:
+            r = self.post("/runs", {"dataset_id": did})
+        finally:
+            dbmod.named_lock = real
+
+        self.assertEqual(r.status_code, 503)
+        self.assertIn("Intenta de nuevo", r.json()["detail"])
+        # Y no se encolo nada.
+        activos = self.store.one(
+            "SELECT COUNT(*) AS n FROM runs WHERE status IN ('queued', 'running')"
+        )["n"]
+        self.assertEqual(activos, 0)
+
     def test_indice_unico_impide_dos_ejecuciones_activas(self):
         """La base de datos sola impide dos ejecuciones activas.
 

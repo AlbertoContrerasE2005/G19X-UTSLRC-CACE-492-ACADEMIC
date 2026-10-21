@@ -61,13 +61,21 @@ se demuestra. Complementa a `docs/PRD.md` (requisitos) y a
 **Operación y verificación**
 - `start.py` crea la base y las tablas desde `db/schema.sql`.
 - `/health`, `/ready`, `/metrics/summary`, `/metrics/runs`.
-- 20 tablas, 67 rutas de API, 38 pruebas automáticas en verde.
+- 20 tablas, 67 rutas de API, 47 pruebas automáticas en verde.
+
+**Robustez**
+- Transacciones reales: la carga de un run y la aprobación/rechazo de
+  anomalías se confirman juntas o se revierten enteras. Un corte a mitad
+  no deja filas a medias ni contadores descuadrados.
+- Una sola ejecución activa garantizada por la base de datos: columna
+  generada `active_flag` con índice único, más bloqueo con nombre
+  (`GET_LOCK`) al encolar para que dos procesos no se cuelen.
 
 ## 2. Qué queda fuera (backlog v1.1)
 
 Detallado en `docs/MEJORAS_FUTURAS.md`. Resumen por área:
 
-**Robustez:** transacciones reales en aprobación y carga; lock de concurrencia a nivel DB; reintento con backoff; validación de frecuencia en el scheduler; rate-limit en uploads y runs.
+**Robustez:** reintento con backoff y manejo de deadlocks; validación de frecuencia en el scheduler; rate-limit en uploads y runs.
 
 **Datos e IA:** versionado y calibración del modelo; normalización antes del IsolationForest genérico; reglas con tipos fecha/número reales; índice de búsqueda para `records`; evitar duplicar el contenido del archivo.
 

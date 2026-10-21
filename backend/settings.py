@@ -28,6 +28,10 @@ def now():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
+class BusyError(ValueError):
+    """El sistema esta ocupado ahora mismo: la accion se puede reintentar."""
+
+
 def clean_header(name):
     """Normaliza un nombre de columna: minusculas, sin espacios raros."""
     name = str(name or "").strip().lower().replace(" ", "_")[:64]

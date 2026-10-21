@@ -208,9 +208,20 @@ comando; si prefieres `root` sin contraseña, no necesitas nada extra.
 ## 7. Estructura del proyecto
 
 ```text
-backend/app.py             API FastAPI (auth, datasets, runs, métricas)
-backend/core.py            Parseo, validación, IA IsolationForest, worker
-backend/db.py              Conexión MySQL + creación de esquema
+backend/app.py             Orquestador de la API: seguridad y registro de módulos
+backend/api_auth.py            Autenticación, sesión y usuarios
+backend/api_datasets.py        Archivos: carga, listado, perfil y plantilla
+backend/api_pipelines.py       Pipelines: configuración, estado e historial
+backend/api_runs.py            Ejecuciones: encolar, consultar, exportar, aprobar
+backend/api_metrics.py         Resumen y métricas de operación
+backend/core.py            Fachada del motor (reexporta los módulos de abajo)
+backend/settings.py        Constantes, tiempo y funciones de seguridad
+backend/data_io.py         Lectura de CSV/Excel/SQL y exportación a CSV
+backend/validators.py      Reglas de calidad (ventas y genéricas)
+backend/store.py           Acceso a MySQL y operaciones de dominio
+backend/engine.py          Motor de una ejecución: valida, detecta y carga
+backend/worker.py          Hilo que programa pipelines y ejecuta los runs
+backend/db.py              Conexión MySQL, transacciones y creación de esquema
 backend/platform_api.py    Orquestador de la plataforma (registra módulos)
 backend/platform_common.py Ayudantes compartidos de la plataforma
 backend/platform_projects.py   Proyectos + perfil/calidad/filas de datasets
@@ -227,9 +238,20 @@ db/schema.sql              20 tablas MySQL
 php/router.php             Entrada web :8080 (estáticos + proxy /api)
 web/                       app.js + styles.css + index.html (SPA, tema oscuro)
 examples/                  CSV de ejemplo y referencia de IA
-tests/                     4 archivos, 38 pruebas
+tests/base.py              Base compartida: prepara la base de pruebas
+tests/test_basic.py        Flujo básico (4 pruebas)
+tests/test_full.py         Batería integral (12 pruebas)
+tests/test_extended.py     Estrés, idempotencia y casos de fallo (10 pruebas)
+tests/test_all.py          Cobertura 1x1 y fallos provocados (16 pruebas)
+tests/test_platform_modules.py  Módulos de calidad y reportes (5 pruebas)
 docs/PRD.md                Requisitos del sistema
+docs/MVP.md                Alcance de la primera entrega
+docs/BASE-DE-DATOS.md      Cómo levantar MySQL/MariaDB
+docs/REVISION_TECNICA.md   Revisión de integración, seguridad y rendimiento
+docs/MEJORAS_FUTURAS.md    Backlog v1.1
 ```
+
+**47 pruebas** en 5 archivos, sobre la base `dataops_test`.
 
 ## 8. Problemas comunes
 

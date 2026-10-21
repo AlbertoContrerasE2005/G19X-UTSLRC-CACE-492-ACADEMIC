@@ -122,26 +122,10 @@ def init_schema():
             for stmt in [s.strip() for s in "\n".join(lines).split(";")]:
                 if stmt:
                     cur.execute(stmt)
-            # 3. Columnas de plataforma en tablas base (migración suave).
-            for ddl in (
-                "ALTER TABLE datasets ADD COLUMN project_id VARCHAR(16)",
-                "ALTER TABLE datasets ADD COLUMN quality_score DOUBLE NOT NULL DEFAULT 0",
-                "ALTER TABLE datasets ADD COLUMN file_type VARCHAR(8) NOT NULL DEFAULT 'csv'",
-                "ALTER TABLE pipelines ADD COLUMN project_id VARCHAR(16)",
-                "ALTER TABLE pipelines ADD COLUMN status VARCHAR(16) NOT NULL DEFAULT 'activo'",
-                "ALTER TABLE pipelines ADD COLUMN run_count INT NOT NULL DEFAULT 0",
-                "ALTER TABLE pipelines ADD COLUMN last_run VARCHAR(40)",
-                "ALTER TABLE pipelines ADD COLUMN steps_json TEXT",
-                # Indice unico real: una sola ejecucion activa (queued/running).
-                "ALTER TABLE runs ADD COLUMN active_flag TINYINT GENERATED ALWAYS"
-                " AS (IF(status IN ('queued', 'running'), 1, NULL)) VIRTUAL",
-                "ALTER TABLE runs DROP INDEX uq_one_active",
-                "ALTER TABLE runs ADD UNIQUE KEY uq_one_active (active_flag)",
-            ):
-                try:
-                    cur.execute(ddl)
-                except Exception:
-                    pass  # La columna o el indice ya existen.
+
+            # 3. Migracion suave: agregar solo lo que falte.
+            _migrar(cur)
+
             cur.execute(
                 "UPDATE pipelines SET project_id = 'p_default'"
                 " WHERE project_id IS NULL"
@@ -152,3 +136,98 @@ def init_schema():
             )
     finally:
         conn.close()
+
+
+# Columnas que se agregan si no existen (para bases creadas antes).
+_COLUMNAS = {
+    "datasets": [
+        ("project_id", "VARCHAR(16)"),
+        ("quality_score", "DOUBLE NOT NULL DEFAULT 0"),
+        ("file_type", "VARCHAR(8) NOT NULL DEFAULT 'csv'"),
+    ],
+    "pipelines": [
+        ("project_id", "VARCHAR(16)"),
+        ("status", "VARCHAR(16) NOT NULL DEFAULT 'activo'"),
+        ("run_count", "INT NOT NULL DEFAULT 0"),
+        ("last_run", "VARCHAR(40)"),
+        ("steps_json", "TEXT"),
+    ],
+}
+
+
+def _existe_columna(cur, tabla, columna):
+    cur.execute(
+        "SELECT COUNT(*) AS n FROM information_schema.COLUMNS"
+        " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s"
+        " AND COLUMN_NAME = %s",
+        (tabla, columna),
+    )
+    return cur.fetchone()["n"] > 0
+
+
+def _existe_indice(cur, tabla, indice):
+    cur.execute(
+        "SELECT COUNT(*) AS n FROM information_schema.STATISTICS"
+        " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s"
+        " AND INDEX_NAME = %s",
+        (tabla, indice),
+    )
+    return cur.fetchone()["n"] > 0
+
+
+def _indices_de_runs(cur):
+    """Devuelve las columnas del indice uq_one_active (vacio si no existe)."""
+    cur.execute(
+        "SELECT COLUMN_NAME FROM information_schema.STATISTICS"
+        " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'runs'"
+        " AND INDEX_NAME = 'uq_one_active' ORDER BY SEQ_IN_INDEX"
+    )
+    return [r["COLUMN_NAME"] for r in cur.fetchall()]
+
+
+def _migrar(cur):
+    """Agrega lo que falte sin rehacer lo que ya existe.
+
+    Si algo falla de verdad, avisa por pantalla en vez de tragarse el error.
+    """
+    avisos = []
+
+    # Columnas nuevas.
+    for tabla, columnas in _COLUMNAS.items():
+        for nombre, tipo in columnas:
+            if _existe_columna(cur, tabla, nombre):
+                continue
+            try:
+                cur.execute(f"ALTER TABLE {tabla} ADD COLUMN {nombre} {tipo}")
+            except Exception as exc:  # noqa: BLE001
+                avisos.append(f"no se pudo agregar {tabla}.{nombre}: {exc}")
+
+    # Indice de una sola ejecucion activa.
+    if not _existe_columna(cur, "runs", "active_flag"):
+        try:
+            cur.execute(
+                "ALTER TABLE runs ADD COLUMN active_flag TINYINT"
+                " GENERATED ALWAYS AS"
+                " (IF(status IN ('queued', 'running'), 1, NULL)) VIRTUAL"
+            )
+        except Exception as exc:  # noqa: BLE001
+            avisos.append(f"no se pudo agregar runs.active_flag: {exc}")
+
+    columnas_indice = _indices_de_runs(cur)
+    if columnas_indice != ["active_flag"]:
+        # Indice viejo (o ninguno): se reemplaza por el correcto.
+        if columnas_indice:
+            try:
+                cur.execute("ALTER TABLE runs DROP INDEX uq_one_active")
+            except Exception as exc:  # noqa: BLE001
+                avisos.append(f"no se pudo quitar el indice anterior: {exc}")
+        try:
+            cur.execute("ALTER TABLE runs ADD UNIQUE KEY uq_one_active (active_flag)")
+        except Exception as exc:  # noqa: BLE001
+            avisos.append(
+                "no se pudo crear el indice de ejecucion activa"
+                f" (una sola ejecucion a la vez): {exc}"
+            )
+
+    for aviso in avisos:
+        print(f"[DataOps] Aviso de esquema: {aviso}")
