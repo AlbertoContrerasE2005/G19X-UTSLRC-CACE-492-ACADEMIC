@@ -494,7 +494,7 @@ document.addEventListener("input", async (ev)=>{
 });
 document.addEventListener("submit", async (ev)=>{
   const form=ev.target; const id=form.id;
-  if(!["upload-form","schedule-form","user-form","pipeline-create-form","project-form","project-edit-form","rule-form","rule-edit-form","pipeline-edit-form","chat-form","pass-form","user-edit-form"].includes(id)) return;
+  if(!["upload-form","user-form","pipeline-create-form","project-form","project-edit-form","rule-form","rule-edit-form","pipeline-edit-form","chat-form","pass-form","user-edit-form"].includes(id)) return;
   ev.preventDefault();
   const button=form.querySelector('button[type="submit"],button.primary'); if(button)button.disabled=true;
   const error=form.querySelector(".form-error"); if(error)error.textContent="";
@@ -512,7 +512,6 @@ document.addEventListener("submit", async (ev)=>{
       const dd=await api("/datasets",{filename:file.name, content, project_id:proj});
       $("#upload-dialog").close(); S.page="datasets"; await refresh(true); renderView(); toast("Archivo guardado. Ya puedes ejecutarlo o ver su perfil."); await openPreview(dd.id);
     }
-    if(id==="schedule-form"){ const data=Object.fromEntries(new FormData(form)); data.interval_minutes=Number(data.interval_minutes); await api("/pipeline",data); await refresh(true); renderView(); toast("Programación guardada."); }
     if(id==="user-form"){ await api("/users",Object.fromEntries(new FormData(form))); S.users=await api("/users"); renderView(); toast("Usuario creado."); }
     if(id==="user-edit-form"){ const d=Object.fromEntries(new FormData(form)); const uid=d.id; delete d.id; if(!d.password)delete d.password; await apiPut("/users/"+uid,d); try{$("#generic-dialog").close();}catch{} S.users=await api("/users"); renderView(); toast("Usuario actualizado."); }
     if(id==="pipeline-create-form"){ const d=Object.fromEntries(new FormData(form)); if(!d.dataset_id)delete d.dataset_id; await api("/pipelines",d); try{$("#generic-dialog").close();}catch{} await refresh(true); renderView(); toast("Pipeline creado con sus pasos."); }

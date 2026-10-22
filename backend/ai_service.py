@@ -30,32 +30,6 @@ def provider_status() -> dict:
     }
 
 
-def build_context(
-    profile: dict, quality: dict, anomalies: list, sample: list, meta: dict
-) -> dict:
-    return {
-        "dataset": meta.get("filename", ""),
-        "rows": profile.get("row_count", 0),
-        "columns": [
-            {
-                "name": p["name"],
-                "type": p["type"],
-                "nulls": p["nulls"],
-                "uniques": p["uniques"],
-                **{k: p[k] for k in ("min", "max", "avg") if k in p},
-            }
-            for p in profile.get("profiles", [])
-        ],
-        "quality": {
-            k: quality.get(k)
-            for k in ("general", "completitud", "unicidad", "validez", "consistencia")
-        },
-        "issues": quality.get("issues", [])[:10],
-        "anomalies": anomalies[:10],
-        "sample": sample[:8],
-    }
-
-
 def _fmt_num(x):
     try:
         return f"{float(x):,.2f}"
@@ -523,9 +497,3 @@ def answer(
         "engine": ENGINES[kind],
         "context_rows": ctx.get("rows", 0),
     }
-
-
-def local_kind(question: str) -> tuple:
-    q = (question or "").lower()
-    kind = "ml" if "anomal" in q else "estadistico"
-    return kind, ENGINES[kind]

@@ -75,13 +75,19 @@ def named_lock(name, timeout=10):
     (por ejemplo, comprobar que no hay una ejecucion activa y encolarla):
     dos procesos a la vez no pueden entrar en la seccion.
 
+    El nombre incluye la base de datos: los locks de MySQL son por
+    servidor, no por base, asi que dos bases distintas no deben
+    bloquearse entre si (por ejemplo, las pruebas contra dataops_test
+    y el servidor contra dataops).
+
     Devuelve True si se logro el bloqueo, False si se agoto el tiempo.
     """
+    nombre = f"{name}_{settings()['database']}"
     conn = connect()
     acquired = False
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT GET_LOCK(%s, %s)", (name, timeout))
+            cur.execute("SELECT GET_LOCK(%s, %s)", (nombre, timeout))
             fila = cur.fetchone()
             acquired = bool(fila and list(fila.values())[0] == 1)
         yield acquired
@@ -89,7 +95,7 @@ def named_lock(name, timeout=10):
         if acquired:
             try:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT RELEASE_LOCK(%s)", (name,))
+                    cur.execute("SELECT RELEASE_LOCK(%s)", (nombre,))
             except Exception:
                 pass
         conn.close()
@@ -161,16 +167,6 @@ def _existe_columna(cur, tabla, columna):
         " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s"
         " AND COLUMN_NAME = %s",
         (tabla, columna),
-    )
-    return cur.fetchone()["n"] > 0
-
-
-def _existe_indice(cur, tabla, indice):
-    cur.execute(
-        "SELECT COUNT(*) AS n FROM information_schema.STATISTICS"
-        " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s"
-        " AND INDEX_NAME = %s",
-        (tabla, indice),
     )
     return cur.fetchone()["n"] > 0
 

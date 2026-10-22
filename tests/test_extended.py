@@ -170,6 +170,29 @@ class Extended(BaseTestCase):
             with dbmod.named_lock("dataops_queue", timeout=0) as segundo:
                 self.assertFalse(segundo, "el bloqueo deberia estar tomado")
 
+    def test_bloqueo_es_por_base_de_datos(self):
+        """El lock incluye la base: dos bases no se bloquean entre si.
+
+        Los locks de MySQL son por servidor, no por base. Sin el nombre
+        de la base, el servidor (dataops) y las pruebas (dataops_test)
+        se estorban y las pruebas fallan de forma intermitente.
+        """
+        from backend import db as dbmod
+
+        conn = mydb.connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT GET_LOCK(%s, 0)", ("dataops_queue_dataops_test",))
+                tomado = cur.fetchone()
+                self.assertEqual(list(tomado.values())[0], 1)
+                # Con otro nombre de base si se puede tomar.
+                cur.execute("SELECT GET_LOCK(%s, 0)", ("dataops_queue_dataops",))
+                otro = cur.fetchone()
+                self.assertEqual(list(otro.values())[0], 1)
+                cur.execute("SELECT RELEASE_LOCK(%s)", ("dataops_queue_dataops",))
+        finally:
+            conn.close()
+
     # -- transacciones (mejora 1 de MEJORAS_FUTURAS) ------------------
     def test_transaccion_revierte_aprobacion_parcial(self):
         """Si la aprobacion falla a la mitad, no queda nada a medias.

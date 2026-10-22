@@ -45,7 +45,7 @@ Primera cuenta = admin (setup). Sesión 8 h en cookie HttpOnly.
    `/health`, `/ready`, serie diaria por pipeline.
 9. **Destino**: ventas → tabla `sales`; dinámico → tabla `records`
    (clave única por pipeline). Repetir no duplica.
-10. **Plataforma** (`backend/platform_api.py`, 35 endpoints):
+10. **Plataforma** (módulos `backend/platform_*.py`, 37 endpoints):
     proyectos con miembros, perfilado por columna (tipo, nulos,
     únicos, min/max/promedio), score de calidad, reglas
     personalizables (`gte`, `not_empty`, `unique`…), tabla de

@@ -42,9 +42,20 @@ class Worker:
 
     def schedule(self):
         """Dispara pipelines vencidos (1 por ciclo, si no hay activa)."""
+        # Primero se mira si hay algo vencido (solo lectura, sin bloqueo).
+        # Asi el worker no tomaria el bloqueo cada 10 segundos sin motivo.
+        if not self.store.one(
+            "SELECT id FROM pipelines WHERE enabled = 1"
+            " AND dataset_id IS NOT NULL AND next_run IS NOT NULL"
+            " AND next_run <= %s LIMIT 1",
+            (time.time(),),
+        ):
+            return
         # Bajo el mismo bloqueo que usa la API para encolar: comprobar y
         # encolar sin que otro proceso se cuele en medio.
-        with mydb.named_lock("dataops_queue") as _:
+        with mydb.named_lock("dataops_queue") as bloqueo:
+            if not bloqueo:
+                return
             if self.store.one(
                 "SELECT id FROM runs WHERE status IN ('queued', 'running') LIMIT 1"
             ):

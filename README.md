@@ -18,7 +18,7 @@ documentación; las decisiones de diseño, la
 revisión del código y la validación
 de resultados corresponden a las personas responsables del
 proyecto. Toda la funcionalidad se verifica con la suite de
-pruebas incluida (`tests/`, 38 pruebas).
+pruebas incluida (`tests/`, 47 pruebas).
 
 ---
 
@@ -189,7 +189,7 @@ node --check web/app.js
 php -l php/router.php
 ```
 
-38 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
+47 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
 IA de ventas y genérica, aprobación, métricas, plataforma completa,
 estrés de 5000 filas, recuperación e idempotencia.
 
