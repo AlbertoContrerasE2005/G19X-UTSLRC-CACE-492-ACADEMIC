@@ -115,6 +115,23 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 
 ## 4. Primer uso (5 minutos)
 
+### Opción rápida: usar las cuentas de prueba
+
+Si solo quieres ver el sistema funcionando, entra con cualquiera de estas
+cuentas (están en la base local de este proyecto, sin datos sensibles):
+
+| Usuario     | Clave               | Rol           |
+|-------------|---------------------|---------------|
+| `demo`      | `Demo2026!!segura`  | Administrador|
+| `admin`     | `Admin2026!!segura` | Administrador|
+| `ingeniero` | `Admin2026!!segura` | Data Engineer |
+| `consulta`  | `Admin2026!!segura` | Usuario (consulta) |
+
+> Para volver a crearlas desde cero (o en otra máquina), usa el
+> sembrador del apartado siguiente con estas mismas claves.
+
+### Opción normal: crear tu propia cuenta
+
 1. En http://127.0.0.1:8080 verás **"Crea tu cuenta inicial"**.
    Regístrate (usuario ≥3 letras, clave ≥10 caracteres). Serás admin.
 2. Ve a **Archivos → Subir** y carga `examples/ventas_ejemplo.csv`
@@ -127,9 +144,7 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 5. Descarga el CSV de resultados y revisa el **Resumen**
    (métricas de 7 días) y **Monitoreo**.
 
-No viene ninguna cuenta por defecto: la primera que registres en el
-paso 1 se queda como administrador. Si quieres datos de ejemplo, usa el
-sembrador que se explica abajo.
+Si ya creaste tu cuenta en el paso 1, úsala y saltarte el sembrador.
 
 ### Datos de prueba (opcional)
 
@@ -150,14 +165,13 @@ porque la primera vez no hay forma de recuperarlas. Si prefieres no
 interactivo, define las variables antes:
 
 ```powershell
-$env:DEMO_PASSWORD  = "tu_clave_demo"    # mínimo 10 caracteres
-$env:ADMIN_PASSWORD = "tu_clave_admin"   # la comparten admin/ingeniero/consulta
+$env:DEMO_PASSWORD  = "Demo2026!!segura"   # clave de la cuenta 'demo'
+$env:ADMIN_PASSWORD = "Admin2026!!segura"  # de admin/ingeniero/consulta
 .\.venv\Scripts\python -m backend.seed
 ```
 
-Luego entra en http://127.0.0.1:8080 con `demo` y la clave que
-definiste. Si ya habías creado tu propia cuenta en el paso 1, puedes
-usar esa y saltarte el sembrador.
+Con esas variables quedan exactamente las cuentas de la tabla de arriba.
+Luego entra en http://127.0.0.1:8080 con `demo` y la clave que definiste.
 
 ## 5. Guía por función
 

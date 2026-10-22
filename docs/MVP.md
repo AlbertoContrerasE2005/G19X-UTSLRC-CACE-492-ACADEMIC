@@ -92,6 +92,25 @@ Detallado en `docs/MEJORAS_FUTURAS.md`. Resumen por área:
 
 Resultado esperado: **64 cargadas, 4 inválidas, 2 alertas**.
 
+### Cuentas para entrar
+
+| Usuario | Clave | Rol |
+|---|---|---|
+| `demo` | `Demo2026!!segura` | Administrador |
+| `admin` | `Admin2026!!segura` | Administrador |
+| `ingeniero` | `Admin2026!!segura` | Data Engineer |
+| `consulta` | `Admin2026!!segura` | Usuario (consulta) |
+
+Se recrean en cualquier máquina con (las claves no están fijas en el código):
+
+```powershell
+$env:DEMO_PASSWORD  = "Demo2026!!segura"
+$env:ADMIN_PASSWORD = "Admin2026!!segura"
+.\.venv\Scripts\python -m backend.seed
+```
+
+### Pasos
+
 | Paso | Acción | Resultado |
 |---|---|---|
 | 1 | Entrar a http://127.0.0.1:8080 | Login |
