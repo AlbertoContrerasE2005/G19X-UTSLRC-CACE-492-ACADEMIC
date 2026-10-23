@@ -157,6 +157,25 @@ class TestDatasets(BaseTestCase):
         run = self.get(f"/runs/{rid}").json()
         self.assertEqual(run["invalid"], 1)
 
+    def test_borrar_dataset_con_pipeline(self):
+        did = self.post(
+            "/datasets", {"filename": "del.csv", "content": "k,v\nA,1\nB,2\n"}
+        ).json()["id"]
+        pid = self.post("/pipelines", {"name": "Del", "dataset_id": did}).json()["id"]
+        rid = self.post(
+            "/runs", {"dataset_id": did, "pipeline_id": pid}
+        ).json()["id"]
+        self.app.state.worker.tick()
+        self.assertEqual(self.get(f"/runs/{rid}").json()["status"], "completed")
+
+        r = self.client.delete(f"/api/datasets/{did}", headers=H)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.get(f"/datasets/{did}").status_code, 404)
+        self.assertEqual(self.get(f"/runs/{rid}").status_code, 404)
+        pipe = self.get(f"/pipelines/{pid}").json()
+        self.assertIsNone(pipe["dataset_id"])
+        self.assertEqual(pipe["enabled"], 0)
+
     def test_preview_rows_profile_quality(self):
         did = self.post("/demo", {}).json()["id"]
         det = self.get(f"/datasets/{did}").json()

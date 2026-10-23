@@ -7,6 +7,7 @@ import uuid
 from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse
 
+from backend import db as mydb
 from backend.data_io import (
     parse_csv_dynamic,
     parse_excel_dynamic,
@@ -171,24 +172,47 @@ def register(ctx):
             (dataset_id,),
         )["n"]:
             raise HTTPException(409, "Tiene ejecuciones en curso.")
-        for r in store.all("SELECT id FROM runs WHERE dataset_id = %s", (dataset_id,)):
-            rid = r["id"]
-            store.run("DELETE FROM run_rows WHERE run_id = %s", (rid,))
-            store.run("DELETE FROM run_logs WHERE run_id = %s", (rid,))
-            store.run("DELETE FROM approvals WHERE run_id = %s", (rid,))
-            store.run("DELETE FROM quality_results WHERE run_id = %s", (rid,))
-            store.run("DELETE FROM anomalies WHERE run_id = %s", (rid,))
-            store.run("DELETE FROM sales WHERE source_run = %s", (rid,))
-            store.run("DELETE FROM records WHERE run_id = %s", (rid,))
-            store.run("UPDATE reports SET run_id = NULL WHERE run_id = %s", (rid,))
-            store.run("DELETE FROM runs WHERE id = %s", (rid,))
-        store.run(
-            "UPDATE reports SET dataset_id = NULL WHERE dataset_id = %s", (dataset_id,)
-        )
-        store.run("DELETE FROM quality_results WHERE dataset_id = %s", (dataset_id,))
-        store.run("DELETE FROM anomalies WHERE dataset_id = %s", (dataset_id,))
-        store.run("DELETE FROM quality_rules WHERE dataset_id = %s", (dataset_id,))
-        store.run("DELETE FROM datasets WHERE id = %s", (dataset_id,))
+        run_ids = [
+            r["id"]
+            for r in store.all(
+                "SELECT id FROM runs WHERE dataset_id = %s", (dataset_id,)
+            )
+        ]
+        # Todo en una transaccion: si algo falla no queda media limpieza.
+        with mydb.transaction() as cur:
+            # Un pipeline puede apuntar al dataset. Sin desvincularlo, la FK
+            # impide borrarlo y el endpoint devolvia 500 a mitad del borrado.
+            cur.execute(
+                "UPDATE pipelines SET dataset_id = NULL, enabled = 0,"
+                " next_run = NULL WHERE dataset_id = %s",
+                (dataset_id,),
+            )
+            for rid in run_ids:
+                cur.execute("DELETE FROM run_rows WHERE run_id = %s", (rid,))
+                cur.execute("DELETE FROM run_logs WHERE run_id = %s", (rid,))
+                cur.execute("DELETE FROM approvals WHERE run_id = %s", (rid,))
+                cur.execute(
+                    "DELETE FROM quality_results WHERE run_id = %s", (rid,)
+                )
+                cur.execute("DELETE FROM anomalies WHERE run_id = %s", (rid,))
+                cur.execute("DELETE FROM sales WHERE source_run = %s", (rid,))
+                cur.execute("DELETE FROM records WHERE run_id = %s", (rid,))
+                cur.execute(
+                    "UPDATE reports SET run_id = NULL WHERE run_id = %s", (rid,)
+                )
+                cur.execute("DELETE FROM runs WHERE id = %s", (rid,))
+            cur.execute(
+                "UPDATE reports SET dataset_id = NULL WHERE dataset_id = %s",
+                (dataset_id,),
+            )
+            cur.execute(
+                "DELETE FROM quality_results WHERE dataset_id = %s", (dataset_id,)
+            )
+            cur.execute("DELETE FROM anomalies WHERE dataset_id = %s", (dataset_id,))
+            cur.execute(
+                "DELETE FROM quality_rules WHERE dataset_id = %s", (dataset_id,)
+            )
+            cur.execute("DELETE FROM datasets WHERE id = %s", (dataset_id,))
         store.audit(user["id"], "dataset_deleted", dataset_id)
         return {"message": "Archivo eliminado."}
 
