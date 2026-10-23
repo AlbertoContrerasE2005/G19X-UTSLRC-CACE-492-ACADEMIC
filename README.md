@@ -148,7 +148,9 @@ Si ya creaste tu cuenta en el paso 1, úsala y saltarte el sembrador.
 
 ### Datos de prueba (opcional)
 
-Para arrancar con usuarios, archivos y pipelines ya listos:
+El proyecto **no trae cuentas preconfiguradas**: la base de datos se
+crea vacía la primera vez que inicias el servicio. Para probar el
+sistema con usuarios y archivos ya listos, usa el sembrador:
 
 ```powershell
 .\.venv\Scripts\python -m backend.seed
@@ -156,7 +158,7 @@ Para arrancar con usuarios, archivos y pipelines ya listos:
 
 Crea los usuarios `demo`, `admin`, `ingeniero` y `consulta`, un proyecto,
 los archivos de ejemplo (ventas, pasteles y productos SQL), un pipeline,
-una regla de calidad, y ejecuta dos pipelines para que veas resultados
+una regla de calidad y ejecuta dos pipelines para que veas resultados
 de inmediato.
 
 Las claves **no están fijas en el código**: el script te las pide por
@@ -165,15 +167,21 @@ porque la primera vez no hay forma de recuperarlas. Si prefieres no
 interactivo, define las variables antes:
 
 ```powershell
-$env:DEMO_PASSWORD  = "Demo2026!!segura"   # clave de la cuenta 'demo'
-$env:ADMIN_PASSWORD = "Admin2026!!segura"  # de admin/ingeniero/consulta
+$env:DEMO_PASSWORD  = "Demo2026!!segura"   # clave de la cuenta `demo`
+$env:ADMIN_PASSWORD = "Admin2026!!segura"   # de admin/ingeniero/consulta
 .\.venv\Scripts\python -m backend.seed
 ```
 
-Con esas variables quedan exactamente las cuentas de la tabla de arriba.
-Luego entra en http://127.0.0.1:8080 con `demo` y la clave que definiste.
+Con esas variables quedan exactamente las cuentas de la tabla de abajo.
 
-## 5. Guía por función
+> **Nota de seguridad:** Estas cuentas y claves son solo para demostración
+> local. Si alguna vez expones este sistema en una red empresarial o en
+> internet, **cámbialas inmediatamente** y configura HTTPS, proxy y
+> respaldos como se especifica en el PRD.
+
+Luego entra en http://127.0.0.1:8080 con `demo` y la clave que
+definiste. Si ya habías creado tu cuenta en el paso 1, úsala y salta el
+sembrador.## 5. Guía por función
 
 | Quiero… | Dónde |
 |---|---|
