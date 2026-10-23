@@ -117,8 +117,16 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 
 ### Opción rápida: usar las cuentas de prueba
 
-Si solo quieres ver el sistema funcionando, entra con cualquiera de estas
-cuentas (las crea el sembrador del apartado siguiente, sin datos sensibles):
+Si solo quieres ver el sistema funcionando, primero crea las cuentas con
+el sembrador y estas claves (la base no viene en el repositorio):
+
+```powershell
+$env:DEMO_PASSWORD  = "Demo2026!!segura"
+$env:ADMIN_PASSWORD = "Admin2026!!segura"
+.\.venv\Scripts\python -m backend.seed
+```
+
+Después entra con cualquiera de estas cuentas (sin datos sensibles):
 
 | Usuario     | Clave               | Rol           |
 |-------------|---------------------|---------------|
@@ -127,8 +135,8 @@ cuentas (las crea el sembrador del apartado siguiente, sin datos sensibles):
 | `ingeniero` | `Admin2026!!segura` | Data Engineer |
 | `consulta`  | `Admin2026!!segura` | Usuario (consulta) |
 
-> Para volver a crearlas desde cero (o en otra máquina), usa el
-> sembrador del apartado siguiente con estas mismas claves.
+> Para volver a crearlas desde cero (o en otra máquina), repite el
+> sembrador con estas mismas claves.
 
 ### Opción normal: crear tu propia cuenta
 
@@ -144,7 +152,7 @@ cuentas (las crea el sembrador del apartado siguiente, sin datos sensibles):
 5. Descarga el CSV de resultados y revisa el **Resumen**
    (métricas de 7 días) y **Monitoreo**.
 
-Si ya creaste tu cuenta en el paso 1, úsala y saltarte el sembrador.
+Si ya creaste tu cuenta en el paso 1, úsala y salta el sembrador.
 
 ### Datos de prueba (opcional)
 
@@ -172,7 +180,7 @@ $env:ADMIN_PASSWORD = "Admin2026!!segura"   # de admin/ingeniero/consulta
 .\.venv\Scripts\python -m backend.seed
 ```
 
-Con esas variables quedan exactamente las cuentas de la tabla de abajo.
+Con esas variables quedan exactamente las cuentas de la tabla de arriba.
 
 > **Nota de seguridad:** Estas cuentas y claves son solo para demostración
 > local. Si alguna vez expones este sistema en una red empresarial o en
@@ -181,7 +189,9 @@ Con esas variables quedan exactamente las cuentas de la tabla de abajo.
 
 Luego entra en http://127.0.0.1:8080 con `demo` y la clave que
 definiste. Si ya habías creado tu cuenta en el paso 1, úsala y salta el
-sembrador.## 5. Guía por función
+sembrador.
+
+## 5. Guía por función
 
 | Quiero… | Dónde |
 |---|---|
