@@ -18,7 +18,7 @@ documentación; las decisiones de diseño, la
 revisión del código y la validación
 de resultados corresponden a las personas responsables del
 proyecto. Toda la funcionalidad se verifica con la suite de
-pruebas incluida (`tests/`, 47 pruebas).
+pruebas incluida (`tests/`, 48 pruebas).
 
 ---
 
@@ -118,7 +118,7 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 ### Opción rápida: usar las cuentas de prueba
 
 Si solo quieres ver el sistema funcionando, entra con cualquiera de estas
-cuentas (están en la base local de este proyecto, sin datos sensibles):
+cuentas (las crea el sembrador del apartado siguiente, sin datos sensibles):
 
 | Usuario     | Clave               | Rol           |
 |-------------|---------------------|---------------|
@@ -211,7 +211,7 @@ node --check web/app.js
 php -l php/router.php
 ```
 
-47 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
+48 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
 IA de ventas y genérica, aprobación, métricas, plataforma completa,
 estrés de 5000 filas, recuperación e idempotencia.
 
@@ -263,7 +263,7 @@ examples/                  CSV de ejemplo y referencia de IA
 tests/base.py              Base compartida: prepara la base de pruebas
 tests/test_basic.py        Flujo básico (4 pruebas)
 tests/test_full.py         Batería integral (12 pruebas)
-tests/test_extended.py     Estrés, idempotencia y casos de fallo (10 pruebas)
+tests/test_extended.py     Estrés, idempotencia y casos de fallo (11 pruebas)
 tests/test_all.py          Cobertura 1x1 y fallos provocados (16 pruebas)
 tests/test_platform_modules.py  Módulos de calidad y reportes (5 pruebas)
 docs/PRD.md                Requisitos del sistema

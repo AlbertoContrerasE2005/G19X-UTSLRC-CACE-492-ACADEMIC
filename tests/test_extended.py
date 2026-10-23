@@ -112,7 +112,7 @@ class Extended(BaseTestCase):
 
         @contextmanager
         def sin_bloqueo(name, timeout=10):
-            yield False  # como si GET_LOCK no hubiera pondering el bloqueo
+            yield False  # como si GET_LOCK no hubiera obtenido el bloqueo
 
         dbmod.named_lock = sin_bloqueo
         try:

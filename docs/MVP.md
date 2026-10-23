@@ -61,7 +61,7 @@ se demuestra. Complementa a `docs/PRD.md` (requisitos) y a
 **Operación y verificación**
 - `start.py` crea la base y las tablas desde `db/schema.sql`.
 - `/health`, `/ready`, `/metrics/summary`, `/metrics/runs`.
-- 20 tablas, 67 rutas de API, 47 pruebas automáticas en verde.
+- 20 tablas, 67 rutas de API, 48 pruebas automáticas en verde.
 
 **Robustez**
 - Transacciones reales: la carga de un run y la aprobación/rechazo de
