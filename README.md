@@ -265,7 +265,7 @@ docs/REVISION_TECNICA.md   Revisión de integración, seguridad y rendimiento
 docs/MEJORAS_FUTURAS.md    Backlog v1.1
 ```
 
-**47 pruebas** en 5 archivos, sobre la base `dataops_test`.
+**48 pruebas** en 6 archivos, sobre la base `dataops_test`.
 
 ## 8. Problemas comunes
 
