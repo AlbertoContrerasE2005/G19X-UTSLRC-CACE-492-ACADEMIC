@@ -66,6 +66,13 @@ se demuestra. Complementa a `docs/PRD.md` (requisitos) y a
   3307): base vacía → `start.py` → `backend.seed` → flujo de 8 pasos
   (64 cargadas / 4 inválidas / 2 alertas y repetición con 0 nuevas).
 
+> **Sobre el puerto de MySQL:** el valor por omisión del proyecto es
+> **3306** (`backend/db.py` usa 3306 si no hay variable de entorno, y
+> `.env.example` trae ese mismo valor). La verificación se hizo en una
+> máquina donde MariaDB escucha en **3307**, así que lo único que se cambió
+> fue `DATAOPS_DB_PORT=3307` en el `.env` local, copiado de `.env.example`.
+> Si tu servidor usa el puerto estándar, no tienes que tocar nada.
+
 **Robustez**
 - Transacciones reales: la carga de un run y la aprobación/rechazo de
   anomalías se confirman juntas o se revierten enteras. Un corte a mitad
@@ -132,6 +139,9 @@ Comprobación:
 node --check web/app.js
 php -l php/router.php
 ```
+
+Antes de empezar, revisa el puerto de MySQL en tu `.env` (ver la nota
+sobre `DATAOPS_DB_PORT` al final de la sección 1).
 
 ## 4. Criterios de aceptación
 
