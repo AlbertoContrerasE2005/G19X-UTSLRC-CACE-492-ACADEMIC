@@ -282,7 +282,7 @@ docs/BASE-DE-DATOS.md      Cómo levantar MySQL/MariaDB
 docs/MEJORAS_FUTURAS.md    Backlog v1.1
 ```
 
-**49 pruebas** en 6 archivos, sobre la base `dataops_test`.
+**49 pruebas** en 5 archivos, sobre la base `dataops_test`.
 
 ## 8. Problemas comunes
 
