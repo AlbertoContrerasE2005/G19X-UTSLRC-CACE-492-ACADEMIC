@@ -115,18 +115,24 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 
 ## 4. Primer uso (5 minutos)
 
-### Opción rápida: usar las cuentas de prueba
+### Opción rápida: cuentas y datos de prueba
 
-Si solo quieres ver el sistema funcionando, primero crea las cuentas con
-el sembrador y estas claves (la base no viene en el repositorio):
+El repositorio no incluye la base de datos ni cuentas creadas: al arrancar,
+la base queda vacía. El sembrador deja todo listo para probar: los usuarios
+`demo`, `admin`, `ingeniero` y `consulta`, un proyecto, los archivos de
+ejemplo (ventas, pasteles y productos SQL), un pipeline, una regla de
+calidad y dos ejecuciones ya hechas.
 
 ```powershell
-$env:DEMO_PASSWORD  = "Demo2026!!segura"
-$env:ADMIN_PASSWORD = "Admin2026!!segura"
+$env:DEMO_PASSWORD  = "Demo2026!!segura"    # cuenta `demo`
+$env:ADMIN_PASSWORD = "Admin2026!!segura"   # `admin`, `ingeniero` y `consulta`
 .\.venv\Scripts\python -m backend.seed
 ```
 
-Después entra con cualquiera de estas cuentas (sin datos sensibles):
+Las claves **no están fijas en el código**: si no defines esas variables, el
+script te las pide por consola (la escritura queda oculta). Anótalas, porque
+después no hay forma de recuperarlas. Con las variables de arriba quedan
+estas cuentas:
 
 | Usuario     | Clave               | Rol           |
 |-------------|---------------------|---------------|
@@ -135,8 +141,11 @@ Después entra con cualquiera de estas cuentas (sin datos sensibles):
 | `ingeniero` | `Admin2026!!segura` | Data Engineer |
 | `consulta`  | `Admin2026!!segura` | Usuario (consulta) |
 
-> Para volver a crearlas desde cero (o en otra máquina), repite el
-> sembrador con estas mismas claves.
+> **Nota de seguridad:** son claves de demostración local. Si algún día
+> expones el sistema en una red o en internet, **cámbialas de inmediato** y
+> añade HTTPS, proxy y respaldos, como se describe en el PRD.
+
+Entra en http://127.0.0.1:8080 con `demo` y la clave que definiste.
 
 ### Opción normal: crear tu propia cuenta
 
@@ -152,44 +161,9 @@ Después entra con cualquiera de estas cuentas (sin datos sensibles):
 5. Descarga el CSV de resultados y revisa el **Resumen**
    (métricas de 7 días) y **Monitoreo**.
 
-Si ya creaste tu cuenta en el paso 1, úsala y salta el sembrador.
-
-### Datos de prueba (opcional)
-
-El proyecto **no trae cuentas preconfiguradas**: la base de datos se
-crea vacía la primera vez que inicias el servicio. Para probar el
-sistema con usuarios y archivos ya listos, usa el sembrador:
-
-```powershell
-.\.venv\Scripts\python -m backend.seed
-```
-
-Crea los usuarios `demo`, `admin`, `ingeniero` y `consulta`, un proyecto,
-los archivos de ejemplo (ventas, pasteles y productos SQL), un pipeline,
-una regla de calidad y ejecuta dos pipelines para que veas resultados
-de inmediato.
-
-Las claves **no están fijas en el código**: el script te las pide por
-consola (la escritura queda oculta) y son las que tú elijas. Anótalas,
-porque la primera vez no hay forma de recuperarlas. Si prefieres no
-interactivo, define las variables antes:
-
-```powershell
-$env:DEMO_PASSWORD  = "Demo2026!!segura"   # clave de la cuenta `demo`
-$env:ADMIN_PASSWORD = "Admin2026!!segura"   # de admin/ingeniero/consulta
-.\.venv\Scripts\python -m backend.seed
-```
-
-Con esas variables quedan exactamente las cuentas de la tabla de arriba.
-
-> **Nota de seguridad:** Estas cuentas y claves son solo para demostración
-> local. Si alguna vez expones este sistema en una red empresarial o en
-> internet, **cámbialas inmediatamente** y configura HTTPS, proxy y
-> respaldos como se especifica en el PRD.
-
-Luego entra en http://127.0.0.1:8080 con `demo` y la clave que
-definiste. Si ya habías creado tu cuenta en el paso 1, úsala y salta el
-sembrador.
+Las dos opciones sirven por separado: si sembraste las cuentas de prueba,
+entra con `demo`; si creaste tu propia cuenta, sigue con ella y no hace
+falta el sembrador.
 
 ## 5. Guía por función
 
