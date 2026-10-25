@@ -42,7 +42,7 @@ Primera cuenta = admin (setup). Sesión 8 h en cookie HttpOnly.
 7. **Aprobación**: aprobar (carga a destino) o rechazar con motivo
    (≥3 caracteres), auditoría completa.
 8. **Monitoreo**: dashboard (activas, éxito 7 días, p50/p95, filas),
-   `/health`, `/ready`, serie diaria por pipeline.
+   `/api/health`, `/api/ready`, serie diaria por pipeline.
 9. **Destino**: ventas → tabla `sales`; dinámico → tabla `records`
    (clave única por pipeline). Repetir no duplica.
 10. **Plataforma** (módulos `backend/platform_*.py`, 37 endpoints):
