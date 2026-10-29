@@ -264,7 +264,7 @@ docs/MEJORAS_FUTURAS.md    Backlog v1.1
 |---|---|
 | `Puerto 8010/8080 ocupado` | Cierra la otra consola de `start.py`. |
 | `MySQL no responde` | Enciende tu MySQL/MariaDB o ajusta puerto y credenciales en `.env`. Ver `docs/BASE-DE-DATOS.md`. |
-| `409 Ya hay una ejecución` | Solo corre 1 a la vez; espera a que termine. |
-| `503 El sistema está ocupado` | Otra petición tenía el bloqueo de la cola en ese instante: reintenta en 1 s. El `409` es distinto: ya hay una ejecución en curso y hay que esperar a que termine. |
+| `409 Ya hay una ejecución` | Ya hay una ejecución activa (solo corre 1 a la vez); espera a que termine. |
+| `503 El sistema está ocupado` | Otra petición estaba encolando en ese instante; reintenta en un segundo. |
 | `413 Archivo hasta 10 MiB` | Parte el archivo en trozos menores. |
 | `502 API apagada` | La consola de `start.py` se cerró; vuelve a ejecutarlo. |
