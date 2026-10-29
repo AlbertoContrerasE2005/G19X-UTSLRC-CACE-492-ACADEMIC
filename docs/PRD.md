@@ -1,28 +1,59 @@
-# PRD — DataOps Final (proyecto nuevo)
+# PRD — DataOps Final
 
-Versión 1.0 · 5 de octubre de 2026.
+Versión 1.1 · 29 de octubre de 2026.
 Stack: HTML + CSS + PHP + Python (FastAPI) + MySQL/MariaDB + SQL.
 Todo local: API `127.0.0.1:8010`, web `127.0.0.1:8080`, MySQL `127.0.0.1:3306` (configurable).
 
-## 1. Objetivo
+## 1. Problema que resuelve y para quién
 
-Plataforma simple para automatizar el ciclo de vida de los datos:
-cargar archivos, validar calidad, detectar anomalías con IA,
-aprobar con criterio humano, programar ejecuciones y monitorear todo.
-Código fácil de leer: un archivo por capa, comentarios en español,
-paleta oscura cómoda.
+En una PyME, o en un área que apenas empieza a ordenar sus datos, la
+información llega en hojas de cálculo sueltas por correo o mensajería.
+Nadie valida lo que entra: filas incompletas, precios escritos como texto,
+fechas imposibles y valores atípicos terminan en el reporte del mes. Tampoco
+queda rastro de quién cargó qué, no hay forma de repetir una carga sin
+duplicar registros y nadie la deja programada.
 
-## 2. Usuarios y roles
+Quien sufre hoy ese problema:
 
-| Rol      | Puede |
-|----------|-------|
-| admin    | Todo: usuarios, pipelines, cargas, ejecuciones, aprobaciones |
-| operator | Cargar, ejecutar, programar, aprobar/rechazar |
-| viewer   | Solo ver y descargar |
+| Quién | Qué le pasa sin la plataforma |
+|---|---|
+| Analista de datos | Limpia a mano cada archivo y vuelve a revisar lo mismo cada mes. |
+| Responsable del área | Decide con cifras que nadie validó y no sabe si el dato es confiable. |
+| Quien carga los datos | Sube archivos sin control: si algo sale mal no hay historial ni forma de deshacer. |
+| Auditoría o dirección | No puede reconstruir qué se cargó, cuándo y con qué criterio. |
+
+La plataforma cubre ese tramo completo: recibe el archivo, lo valida, señala
+lo anómalo, pide una decisión humana con motivo, carga solo lo aprobado y
+deja todo registrado. Corre en la máquina del usuario, sin servicios
+externos.
+
+## 2. Objetivo
+
+Que cualquier persona del equipo pueda tomar un archivo de datos, saber si es
+confiable antes de usarlo y dejar constancia de lo que se cargó, sin escribir
+código y sin depender de servicios externos.
+
+Metas concretas:
+
+- Un archivo nuevo queda validado y cargado en segundos.
+- Ninguna fila dudosa llega al destino sin una decisión humana con motivo.
+- Repetir una carga no duplica registros y todo queda registrado.
+- El sistema se entiende leyendo un archivo por capa, con comentarios en español.
+
+## 3. Usuarios y roles
+
+| Rol (código) | Nombre en pantalla | Puede |
+|---|---|---|
+| admin    | Administrador | Todo: usuarios, pipelines, cargas, ejecuciones, aprobaciones |
+| operator | Data Engineer | Cargar, ejecutar, programar, aprobar/rechazar |
+| viewer   | Usuario       | Solo ver y descargar |
 
 Primera cuenta = admin (setup). Sesión 8 h en cookie HttpOnly.
+El código y la API usan `admin`, `operator` y `viewer`; en la interfaz esos
+mismos roles se muestran como Administrador, Data Engineer y Usuario (en el
+selector de alta de usuario, «Usuario (consulta)»).
 
-## 3. Funciones (100 %)
+## 4. Funciones (100 %)
 
 1. **Auth**: setup inicial, login, logout, crear usuarios (admin).
 2. **Datasets**: subir CSV/XLSX/SQL hasta 10 MiB y 20000 filas,
@@ -55,19 +86,34 @@ Primera cuenta = admin (setup). Sesión 8 h en cookie HttpOnly.
     opcionales por `.env`), actividad auditable, dashboard con
     gráficas y monitoreo de pipelines.
 
-## 4. Límites
+## 5. Límites
 
 10 MiB por archivo, 20000 filas, 1-30 columnas únicas,
 celdas ≤2000 caracteres, revisión 1-500 filas por acción,
 1 ejecución activa global, 1 reintento solo ante fallo temporal.
 
-## 5. Seguridad
+## 6. Fuera de alcance
+
+Queda fuera de esta entrega todo lo que implique sacar el sistema de una
+sola máquina o atender varios usuarios trabajando a la vez. El detalle y el
+orden previsto están en `docs/MEJORAS_FUTURAS.md`; en resumen:
+
+- Despliegue en red o internet: Docker, compose, TLS y proxy inverso.
+- Conectores a bases de datos o APIs externas (solo CSV, XLSX y SQL).
+- Varias ejecuciones en paralelo o una cola distribuida.
+- Versionado y reentrenamiento del modelo de anomalías.
+- Subida multipart con progreso y refresco en vivo de la interfaz.
+
+No es deuda oculta: es alcance decidido. El sistema es local por diseño
+(una máquina, una ejecución activa a la vez).
+
+## 7. Seguridad
 
 Scrypt, sesiones sha256, 401/403 por rol, solo localhost,
 `X-Requested-With`, allowlist de origen, CSP, `no-store` en API,
 anti-fórmulas en CSV exportado, rate-limit de login.
 
-## 6. Criterios de aceptación
+## 8. Criterios de aceptación
 
 - Setup → login → subir CSV/XLSX/SQL → ejecutar → completar.
 - Ventas ejemplo 70 filas: 64 cargadas, 4 inválidas, 2 alertas.
