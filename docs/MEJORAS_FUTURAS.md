@@ -1,7 +1,7 @@
 # Mejoras futuras (para otro día)
 
-Guardado el 5 de octubre de 2026. Proyecto verificado al 100 % del PRD v1.0;
-esto es backlog v1.1, no deuda pendiente.
+Actualizado el 5 de noviembre de 2026, contra el PRD 1.1.
+Esto es lo que queda para la siguiente versión; no es deuda pendiente.
 
 ## Robustez
 
@@ -19,29 +19,31 @@ esto es backlog v1.1, no deuda pendiente.
 
 ## Datos e IA
 
-6. Versionar/calibrar modelo ventas (contamination/​umbral fijos, sin referencia por run).
+6. Versionar, calibrar y reentrenar el modelo de ventas (contamination/umbral fijos, sin referencia por run).
 7. Normalizar antes del IsolationForest genérico + mínimo de filas configurable.
 8. Reglas con tipos fecha/número reales (hoy varias comparan texto).
 9. Índice fulltext o tabla pivote para `records` (búsquedas grandes).
 10. Evitar duplicar `content` entero + filas (crece rápido con 20k).
+11. Conectores a bases de datos o APIs externas: hoy solo entran archivos CSV, XLSX y SQL, así que leer de otro sistema obliga a exportar primero.
 
 ## UX
 
-11. `approveAll` avisa que solo aprueba visibles (100) o aprueba por filtro real.
-12. Refresh diferencial o SSE (polling 2.5 s pierde foco/scroll).
-13. Subida multipart/chunks con progreso real (hoy JSON+base64 +33 %).
-14. Accesibilidad: foco visible, labels, `aria-current`, contraste muted.
+12. `approveAll` avisa que solo aprueba visibles (100) o aprueba por filtro real.
+13. Refresh diferencial o SSE (polling 2.5 s pierde foco/scroll).
+14. Subida multipart/chunks con progreso real (hoy JSON+base64 +33 %).
+15. Accesibilidad: foco visible, labels, `aria-current`, contraste muted.
 
 ## Seguridad (postura local actual)
 
-15. Cookie `Secure` + TLS al exponer (ok en localhost).
-16. Rate-limit por usuario y en más endpoints.
-17. Auditoría visible de logins fallidos y aprobaciones con IP/hora.
-18. `object-src 'none'` y reducir `unsafe-inline`.
+16. Cookie `Secure` + TLS al exponer (ok en localhost).
+17. Rate-limit por usuario y en más endpoints.
+18. Auditoría visible de logins fallidos y aprobaciones con IP/hora.
+19. `object-src 'none'` y reducir `unsafe-inline`.
 
 ## Operación
 
-19. Dockerfile + compose + `docs/DESPLIEGUE.md`.
-20. Backup/restore en caliente + retención.
-21. Logs a archivo con rotación.
-22. Healthcheck con latencia DB y umbrales de cola.
+20. Dockerfile + compose + proxy inverso y `docs/DESPLIEGUE.md`.
+21. Backup/restore en caliente + retención.
+22. Logs a archivo con rotación.
+23. Healthcheck con latencia DB y umbrales de cola.
+24. Varias ejecuciones en paralelo o una cola distribuida: hoy hay una sola activa global, a propósito, para que los destinos y los contadores no se pisen.

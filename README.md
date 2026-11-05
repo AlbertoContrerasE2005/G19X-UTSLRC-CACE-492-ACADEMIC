@@ -254,7 +254,7 @@ docs/PRD.md                Requisitos del sistema
 docs/MVP.md                Alcance de la primera entrega
 docs/BASE-DE-DATOS.md      Cómo levantar MySQL/MariaDB
 docs/DECISIONES.md         Por qué una sola ejecución, 409/503 y borrado
-docs/MEJORAS_FUTURAS.md    Backlog v1.1
+docs/MEJORAS_FUTURAS.md    Plan para la siguiente versión
 ```
 
 **49 pruebas** en 5 archivos, sobre la base `dataops_test`.
