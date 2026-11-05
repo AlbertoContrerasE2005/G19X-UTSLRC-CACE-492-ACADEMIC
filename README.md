@@ -253,6 +253,7 @@ tests/test_platform_modules.py  Módulos de calidad y reportes (5 pruebas)
 docs/PRD.md                Requisitos del sistema
 docs/MVP.md                Alcance de la primera entrega
 docs/BASE-DE-DATOS.md      Cómo levantar MySQL/MariaDB
+docs/DECISIONES.md         Por qué una sola ejecución, 409/503 y borrado
 docs/MEJORAS_FUTURAS.md    Backlog v1.1
 ```
 
