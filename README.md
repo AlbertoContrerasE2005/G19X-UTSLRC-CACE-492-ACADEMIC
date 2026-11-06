@@ -26,6 +26,8 @@ pruebas incluida (`tests/`, 49 pruebas).
 
 - **Python 3.12** (64 bits) con `py` en el PATH.
 - **PHP 8** (sirve el de XAMPP: `C:\xampp\php\php.exe`).
+- **Node.js 18+** (solo para `node --check web/app.js`; si no lo tienes,
+  puedes omitir esa comprobación).
 - **MySQL 8 o MariaDB 10.4+** en `127.0.0.1:3306` (el puerto estándar).
   Sirve cualquiera: XAMPP, una instalación propia, o Docker. Si el tuyo
   usa otro puerto, se cambia en `.env`.
@@ -112,6 +114,16 @@ Deja esa consola abierta. Para detener: `Ctrl+C`.
 > Si tu MySQL no esta en el puerto 3306, define `DATAOPS_DB_*` antes
 > de ejecutar `start.py` en la misma consola, o copia `.env.example`
 > como `.env` y ajusta el puerto ahi. Ver `docs/BASE-DE-DATOS.md`.
+>
+> Si ya hay otra instancia de DataOps corriendo, `start.py` se detiene con
+> `Puerto 8010 ocupado`. Localiza el proceso antes de cerrarlo:
+>
+> ```powershell
+> Get-NetTCPConnection -State Listen -LocalPort 8010,8080 |
+>   Select-Object LocalPort,OwningProcess
+> ```
+>
+> Tambien sirve `netstat -ano | findstr ":8010 :8080"`.
 
 ## 4. Primer uso (5 minutos)
 
@@ -145,42 +157,65 @@ estas cuentas:
 > expones el sistema en una red o en internet, **cámbialas de inmediato** y
 > añade HTTPS, proxy y respaldos, como se describe en el PRD.
 
+> **El sembrador también crea datos.** Además de las cuentas, deja tres
+> datasets, un pipeline, una regla y dos ejecuciones; la ejecución de ventas
+> ya carga **64 filas** en el destino. Por eso, si después repites el flujo
+> de `docs/MVP.md` sobre la misma base, el detalle mostrará
+> **0 cargadas · 64 existentes · 4 inválidas · 2 alertas**, no 64 cargadas.
+>
+> Para ver el resultado **64 cargadas / 4 inválidas / 2 alertas** desde cero,
+> usa la opción normal (cuenta propia, base sin sembrar) **o** vacía el
+> destino antes de ejecutar:
+>
+> ```sql
+> TRUNCATE TABLE dataops.sales;
+> TRUNCATE TABLE dataops.records;
+> ```
+>
+> Eso borra solo las filas de destino; no borra usuarios, datasets ni
+> historial.
+
 Entra en http://127.0.0.1:8080 con `demo` y la clave que definiste.
 
 ### Opción normal: crear tu propia cuenta
 
 1. En http://127.0.0.1:8080 verás **"Crea tu cuenta inicial"**.
    Regístrate (usuario ≥3 letras, clave ≥10 caracteres). Serás admin.
-2. Ve a **Archivos → Subir** y carga `examples/ventas_ejemplo.csv`
+2. Ve a **Datasets → Cargar archivo** y carga `examples/ventas_ejemplo.csv`
    (70 filas de prueba incluidas en el repo).
 3. Pulsa **Ejecutar**. En segundos verás el resultado:
    **64 cargadas, 4 inválidas y 2 alertas de IA**.
-4. Entra a la ejecución (**Ver**), filtra **Solo pendientes**,
+4. En el detalle de la ejecución, filtra **Solo pendientes**,
    escribe un motivo (ej. `Pico validado`) y **Aprueba** una alerta;
    **Rechaza** la otra con otro motivo.
-5. Descarga el CSV de resultados y revisa el **Resumen**
+5. Descarga el CSV de resultados y revisa el **Dashboard**
    (métricas de 7 días) y **Monitoreo**.
 
 Las dos opciones sirven por separado: si sembraste las cuentas de prueba,
 entra con `demo`; si creaste tu propia cuenta, sigue con ella y no hace
-falta el sembrador.
+falta el sembrador. Para la demo de **64/4/2**, la opción normal es la que
+parte de un destino vacío; si sembraste datos, aplica el `TRUNCATE` de
+arriba o espera **0 nuevas / 64 existentes**.
 
 ## 5. Guía por función
 
 | Quiero… | Dónde |
 |---|---|
-| Subir CSV/Excel/SQL (10 MiB, 20000 filas, cualquier columna) | Archivos → Subir |
-| Ver perfil, calidad y filas de un archivo | Archivos → clic en el archivo |
+| Subir CSV/Excel/SQL (10 MiB, 20000 filas, cualquier columna) | Datasets → Cargar archivo |
+| Ver perfil, calidad y filas de un archivo | Datasets → clic en el archivo |
 | Crear un pipeline (ej. *Inventario*) | Pipelines → Nuevo |
 | Asignar archivo + frecuencia (manual/15/60/1440) | Pipelines → Editar |
-| Ejecutar ahora | Archivos → Ejecutar, o Pipelines → Ejecutar |
-| Revisar alertas de IA | Ejecuciones → Ver → Solo pendientes |
+| Ejecutar ahora | Datasets → Ejecutar, o Pipelines → Ejecutar |
+| Revisar alertas de IA | Detalle de la ejecución → Solo pendientes |
 | Descargar resultados/incidencias | Dentro de la ejecución |
 | Programar ejecuciones solas | Pipelines → Editar → Frecuencia |
-| Preguntar a la IA sobre tus datos | Sección IA (elige proyecto y dataset) |
+| Preguntar a la IA sobre tus datos | IA / Asistente (elige proyecto y dataset) |
 | Generar reporte JSON/CSV/PDF | Reportes → Generar |
 | Crear usuarios (admin) | Usuarios |
-| Ver actividad y alertas | Actividad / Alertas / Dashboard |
+| Ver actividad y alertas | Historial / Alertas / Dashboard |
+
+> La interfaz v2.0 llama **Datasets** a lo que antes era *Archivos*, e
+> **Historial** a lo que antes era *Actividad*.
 
 Formatos aceptados:
 - **CSV**: coma o punto y coma, UTF-8, 1–30 columnas.
@@ -194,6 +229,11 @@ Formatos aceptados:
 node --check web/app.js
 php -l php/router.php
 ```
+
+`node --check` requiere Node.js (ver Requisitos); si no lo tienes, puedes
+omitir esa comprobación y correr solo las pruebas de Python y el lint de PHP.
+La suite incluye la descarga de reportes PDF: `requirements.txt` instala
+`reportlab`, que es lo que genera el PDF.
 
 49 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
 IA de ventas y genérica, aprobación, métricas, plataforma completa,
@@ -263,8 +303,10 @@ docs/MEJORAS_FUTURAS.md    Plan para la siguiente versión
 
 | Síntoma | Causa y solución |
 |---|---|
-| `Puerto 8010/8080 ocupado` | Cierra la otra consola de `start.py`. |
+| `Puerto 8010/8080 ocupado` | Cierra la otra consola de `start.py`. Para encontrarla: `Get-NetTCPConnection -State Listen -LocalPort 8010,8080 \| Select-Object LocalPort,OwningProcess`. |
 | `MySQL no responde` | Enciende tu MySQL/MariaDB o ajusta puerto y credenciales en `.env`. Ver `docs/BASE-DE-DATOS.md`. |
+| `La demo muestra 0 cargadas y 64 existentes` | El sembrador ya cargó las 64 filas. Usa una base sin sembrar o vacía `dataops.sales`/`dataops.records` (ver sección 4). |
+| `Descarga de PDF devuelve 500` | Falta `reportlab`: ejecuta `pip install -r requirements.txt`. |
 | `409 Ya hay una ejecución` | Ya hay una ejecución activa (solo corre 1 a la vez); espera a que termine. |
 | `503 El sistema está ocupado` | Otra petición estaba encolando en ese instante; reintenta en un segundo. |
 | `413 Archivo hasta 10 MiB` | Parte el archivo en trozos menores. |

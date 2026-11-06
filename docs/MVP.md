@@ -62,9 +62,11 @@ se demuestra. Complementa a `docs/PRD.md` (requisitos) y a
 - `start.py` crea la base y las tablas desde `db/schema.sql`.
 - `/api/health`, `/api/ready`, `/api/metrics/summary`, `/api/metrics/runs`.
 - 20 tablas, 67 rutas de API, 49 pruebas automáticas en verde.
+- Reportes PDF con `reportlab` (incluido en `requirements.txt`).
 - Verificado de punta a punta sobre **MariaDB 10.4.32** (XAMPP, puerto
-  3307): base vacía → `start.py` → `backend.seed` → flujo de 8 pasos
-  (64 cargadas / 4 inválidas / 2 alertas y repetición con 0 nuevas).
+  3307): base vacía → `start.py` → `backend.seed` → flujo de 8 pasos.
+  El **64/4/2** se reproduce con el destino vacío (`sales`/`records`);
+  tras el seed, la primera ejecución muestra **0 cargadas / 64 existentes**.
 
 > **Sobre el puerto de MySQL:** el valor por omisión del proyecto es
 > **3306** (`backend/db.py` usa 3306 si no hay variable de entorno, y
@@ -100,7 +102,20 @@ Detallado en `docs/MEJORAS_FUTURAS.md`. Resumen por área:
 
 ## 3. Flujo de demostración
 
-Resultado esperado: **64 cargadas, 4 inválidas, 2 alertas**.
+Resultado esperado: **64 cargadas, 4 inválidas, 2 alertas** con el destino
+vacío.
+
+> **Ojo con el sembrador:** `backend.seed` no solo crea las cuentas; también
+> carga 64 filas de ventas en el destino (`sales`). Si ejecutas el seed y
+> luego repites este flujo sobre la misma base, el paso 4 mostrará
+> **0 cargadas · 64 existentes · 4 inválidas · 2 alertas**. Para reproducir
+> el 64/4/2 desde cero, usa una base sin sembrar o vacía el destino antes
+> del paso 2:
+>
+> ```sql
+> TRUNCATE TABLE dataops.sales;
+> TRUNCATE TABLE dataops.records;
+> ```
 
 ### Cuentas para entrar
 
@@ -124,13 +139,17 @@ $env:ADMIN_PASSWORD = "Admin2026!!segura"
 | Paso | Acción | Resultado |
 |---|---|---|
 | 1 | Entrar a http://127.0.0.1:8080 | Login |
-| 2 | Archivos → Cargar archivo → `examples/ventas_ejemplo.csv` | 70 filas guardadas |
+| 2 | Datasets → Cargar archivo → `examples/ventas_ejemplo.csv` | 70 filas guardadas |
 | 3 | Ejecutar el pipeline | `completed` |
-| 4 | Abrir el detalle | **64 cargadas · 4 inválidas · 2 alertas** |
+| 4 | Abrir el detalle | **64 cargadas · 4 inválidas · 2 alertas** (destino vacío) |
 | 5 | Filtrar "Solo pendientes" | 2 anomalías visibles |
-| 6 | Aprobar 1 con motivo | suma 1 a destino |
+| 6 | Aprobar 1 con motivo | suma 1 a destino (65 cargadas) |
 | 7 | Rechazar la otra con motivo | queda registrada, no suma |
-| 8 | Repetir la ejecución | **0 nuevas**, 64 ya existentes |
+| 8 | Repetir la ejecución | **0 nuevas · 64 existentes · 4 inválidas · 2 alertas** |
+
+> En el paso 8 la nueva ejecución vuelve a evaluar el archivo completo:
+> las aprobaciones y rechazos son por ejecución, no se heredan. Por eso
+> las 2 alertas aparecen de nuevo como pendientes.
 
 Comprobación:
 
@@ -140,6 +159,10 @@ node --check web/app.js
 php -l php/router.php
 ```
 
+`node --check` requiere Node.js. Los reportes PDF usan `reportlab`, que ya
+viene en `requirements.txt`; si falta, las pruebas de reportes fallan con
+500.
+
 Antes de empezar, revisa el puerto de MySQL en tu `.env` (ver la nota
 sobre `DATAOPS_DB_PORT` al final de la sección 1).
 
@@ -148,7 +171,9 @@ sobre `DATAOPS_DB_PORT` al final de la sección 1).
 Los de `docs/PRD.md`, verificados en la entrega:
 
 - Setup → login → subir CSV/XLSX/SQL → ejecutar → completar.
-- Ventas ejemplo 70 filas: 64 cargadas, 4 inválidas, 2 alertas.
+- Ventas ejemplo 70 filas: 64 cargadas, 4 inválidas, 2 alertas (destino
+  vacío; tras el seed: 0 nuevas / 64 existentes).
 - Aprobar 1 alerta suma a destino; rechazar la otra la marca.
-- Repetir el mismo archivo: 0 nuevas (idempotente).
+- Repetir el mismo archivo: 0 nuevas (idempotente); cada ejecución vuelve
+  a marcar sus propias alertas.
 - `unittest` en verde + `node --check` + `php -l`.
