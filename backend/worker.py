@@ -4,12 +4,29 @@ import threading
 import time
 import uuid
 
+import pymysql
+
 from backend import db as mydb
 from backend.engine import Engine
 from backend.settings import now
 from backend.store import Store
 
 # ---------------------------------------------------------------- worker
+
+# Espera entre ciclos: normal y cuando la base de datos no responde.
+WAIT_OK = 10
+WAIT_DB_DOWN = 30
+
+# Codigos de error de MySQL que indican caida/conexion perdida, no un SQL malo.
+DB_DOWN_CODES = (2002, 2003, 2006, 2013)
+
+
+def _db_down(exc):
+    """True si la excepcion es de conexion (servidor caido o conexion perdida)."""
+    if isinstance(exc, (OSError, pymysql.err.InterfaceError)):
+        return True
+    code = exc.args[0] if getattr(exc, "args", None) else None
+    return code in DB_DOWN_CODES
 
 
 class Worker:
@@ -166,14 +183,35 @@ class Worker:
         return True
 
     def loop(self):
+        import logging
+
+        offline = False
         while not self.stop_event.is_set():
             try:
                 self.tick()
+                if offline:
+                    logging.warning("Conexion con la base de datos restablecida.")
+                    offline = False
+                wait = WAIT_OK
+            except (pymysql.err.OperationalError, pymysql.err.InterfaceError, OSError) as exc:
+                if _db_down(exc):
+                    # Se avisa una sola vez para no inundar la consola.
+                    if not offline:
+                        logging.warning(
+                            "Base de datos no disponible (%s)."
+                            " El worker reintentara cada %s s.",
+                            exc,
+                            WAIT_DB_DOWN,
+                        )
+                        offline = True
+                    wait = WAIT_DB_DOWN
+                else:
+                    logging.exception("Error en worker")
+                    wait = WAIT_OK
             except Exception:  # noqa: BLE001
-                import logging
-
                 logging.exception("Error en worker")
-            self.stop_event.wait(10)
+                wait = WAIT_OK
+            self.stop_event.wait(wait)
 
     def start(self):
         self.recover()
