@@ -243,12 +243,13 @@ Con las correcciones, una instalación desde cero siguiendo el README:
 Los dos fallos encontrados en la primera corrida (PDF 500 por `reportlab`
 ausente y el aviso del seed) quedaron corregidos y verificados en la segunda.
 
-## Verificación final — 8-nov-2026 · commit 56ed3e1
+## Verificación final — 8-nov-2026 · commit 56ed3e1 + pruebas de `_db_down`
 
-Después del arreglo de `backend/worker.py` (reintento si la base se cae):
+Después del arreglo de `backend/worker.py` (reintento si la base se cae) y de
+agregar las pruebas de `_db_down`:
 
-- `python -m unittest discover -s tests -v`: **49 pruebas, OK**
-  (`Ran 49 tests in 129.102s`).
+- `python -m unittest discover -s tests -v`: **51 pruebas, OK**
+  (`Ran 51 tests in 79.777s`).
 - `node --check web/app.js`: OK · `php -l php/router.php`: sin errores.
 
 La suite se ejecutó sobre MariaDB 10.4.32 en `127.0.0.1:3306`, con las

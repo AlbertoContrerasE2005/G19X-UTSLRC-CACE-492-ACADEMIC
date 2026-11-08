@@ -61,7 +61,7 @@ se demuestra. Complementa a `docs/PRD.md` (requisitos) y a
 **Operación y verificación**
 - `start.py` crea la base y las tablas desde `db/schema.sql`.
 - `/api/health`, `/api/ready`, `/api/metrics/summary`, `/api/metrics/runs`.
-- 20 tablas, 67 rutas de API, 49 pruebas automáticas en verde.
+- 20 tablas, 67 rutas de API, 51 pruebas automáticas en verde.
 - Reportes PDF con `reportlab` (incluido en `requirements.txt`).
 - Verificado de punta a punta sobre **MariaDB 10.4.32** (XAMPP, puerto
   3307): base vacía → `start.py` → `backend.seed` → flujo de 8 pasos.

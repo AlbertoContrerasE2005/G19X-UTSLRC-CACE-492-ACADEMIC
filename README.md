@@ -18,7 +18,7 @@ documentación; las decisiones de diseño, la
 revisión del código y la validación
 de resultados corresponden a las personas responsables del
 proyecto. Toda la funcionalidad se verifica con la suite de
-pruebas incluida (`tests/`, 49 pruebas).
+pruebas incluida (`tests/`, 51 pruebas).
 
 ---
 
@@ -235,7 +235,7 @@ omitir esa comprobación y correr solo las pruebas de Python y el lint de PHP.
 La suite incluye la descarga de reportes PDF: `requirements.txt` instala
 `reportlab`, que es lo que genera el PDF.
 
-49 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
+51 pruebas: auth y roles, cargas, límites, pipelines, proyectos,
 IA de ventas y genérica, aprobación, métricas, plataforma completa,
 estrés de 5000 filas, recuperación e idempotencia.
 
@@ -287,7 +287,7 @@ examples/                  CSV de ejemplo y referencia de IA
 tests/base.py              Base compartida: prepara la base de pruebas
 tests/test_basic.py        Flujo básico (4 pruebas)
 tests/test_full.py         Batería integral (13 pruebas)
-tests/test_extended.py     Estrés, idempotencia y casos de fallo (11 pruebas)
+tests/test_extended.py     Estrés, idempotencia y casos de fallo (13 pruebas)
 tests/test_all.py          Cobertura 1x1 y fallos provocados (16 pruebas)
 tests/test_platform_modules.py  Módulos de calidad y reportes (5 pruebas)
 docs/PRD.md                Requisitos del sistema
@@ -298,7 +298,7 @@ docs/MEJORAS_FUTURAS.md    Plan para la siguiente versión
 docs/evidencias/           Bitácora de instalación limpia y capturas
 ```
 
-**49 pruebas** en 5 archivos, sobre la base `dataops_test`.
+**51 pruebas** en 5 archivos, sobre la base `dataops_test`.
 
 ## 8. Problemas comunes
 

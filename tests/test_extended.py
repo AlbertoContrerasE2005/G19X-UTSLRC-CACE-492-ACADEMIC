@@ -9,12 +9,15 @@ import sys
 import time
 import unittest
 
+import pymysql
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 # base primero: fija DATAOPS_DB_NAME=dataops_test antes de importar backend.
 from base import ADMIN, H, BaseTestCase  # noqa: E402
 
 from backend import db as mydb  # noqa: E402
+from backend.worker import _db_down  # noqa: E402
 
 
 class Extended(BaseTestCase):
@@ -266,6 +269,18 @@ class Extended(BaseTestCase):
         self.assertEqual(approved_despues, approved_antes, "el contador cambio")
         self.assertEqual(approvals, 0, "quedo auditoria sin carga")
         self.assertEqual(anomalias, 2, "las anomalias siguen pendientes")
+
+
+class TestWorkerBaseCaida(unittest.TestCase):
+    """_db_down es pura: se prueba sin levantar la base."""
+
+    def test_errores_de_conexion_cuentan_como_base_caida(self):
+        self.assertTrue(_db_down(pymysql.err.OperationalError(2003, "no conecta")))
+        self.assertTrue(_db_down(pymysql.err.InterfaceError()))
+        self.assertTrue(_db_down(OSError()))
+
+    def test_error_de_sql_no_es_base_caida(self):
+        self.assertFalse(_db_down(pymysql.err.OperationalError(1205, "lock wait")))
 
 
 if __name__ == "__main__":
