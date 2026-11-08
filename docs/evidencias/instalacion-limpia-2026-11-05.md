@@ -176,7 +176,7 @@ La suite completa volvió a correr: **49 pruebas, OK** en 77.7 s.
 | 6 | La demo no aclaraba que aprobaciones/rechazos son por ejecución (la repetición vuelve a mostrar 2 pendientes). | Se anotó en `docs/MVP.md`. |
 | 7 | El README no relacionaba el error 500 de PDF con una dependencia faltante. | Se añadió a la tabla de Problemas comunes y al criterio de aceptación. |
 
-Archivos modificados (sin commit todavía):
+Corregido en el commit a55101e:
 
 - `requirements.txt` — `reportlab==5.1.0`.
 - `README.md` — Node.js, puertos, aviso del seed, `TRUNCATE`, etiquetas de UI,
@@ -190,7 +190,7 @@ Para comprobar que las instrucciones corregidas sí funcionan desde cero, se
 repitió el proceso en `C:\prueba-limpia2`:
 
 1. Clon nuevo del mismo commit `41cbf3f` (1.4 s).
-2. Se aplicaron los tres archivos corregidos (aún no commiteados):
+2. Se aplicaron los tres archivos corregidos (commit `a55101e`):
    `README.md`, `requirements.txt`, `docs/MVP.md`.
 3. Se borraron las bases `dataops` y `dataops_test` de la instancia de prueba
    para partir de cero.
@@ -242,3 +242,14 @@ Con las correcciones, una instalación desde cero siguiendo el README:
 
 Los dos fallos encontrados en la primera corrida (PDF 500 por `reportlab`
 ausente y el aviso del seed) quedaron corregidos y verificados en la segunda.
+
+## Verificación final — 8-nov-2026 · commit 56ed3e1
+
+Después del arreglo de `backend/worker.py` (reintento si la base se cae):
+
+- `python -m unittest discover -s tests -v`: **49 pruebas, OK**
+  (`Ran 49 tests in 129.102s`).
+- `node --check web/app.js`: OK · `php -l php/router.php`: sin errores.
+
+La suite se ejecutó sobre MariaDB 10.4.32 en `127.0.0.1:3306`, con las
+dependencias de `requirements.txt` (incluye `reportlab`).
